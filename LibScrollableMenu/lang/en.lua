@@ -1,25 +1,27 @@
 -- Messages settings
 local strings = {
-	SI_LSM_SEARCH_FILTER_TOOLTIP = "Enter a search term to filter the menus and (nested) submenu entries.\nPrefix search with \'/\' shows non matching submenus too",
+	--Search box
+    SI_LSM_SEARCH_FILTER_TOOLTIP = "Enter a search term to filter the menus and (nested) submenu entries.\nPrefix search with \'/\' shows non matching submenus too",
 
+    --Context menu at chekboxes
     SI_LSM_CNTXT_CHECK_ALL = "Check all",
     SI_LSM_CNTXT_CHECK_NONE = "Check none",
     SI_LSM_CNTXT_CHECK_INVERT = "Invert",
 
+    --Settings menu
     SI_LSM_LAM_HEADER_CNTXTMENU = "Context menu",
-    SI_LSM_LAM_CNTXTMEN_DESC = "LibScrollableMenu (short: LSM) can replace the non-scrollable context menus of ESO (and LibCustomMenu).\n\nIf you enable the setting here you can choose which controls at the UI should add the context menus via LSM instead.\nControl = either the control name below the mouse cursor, or it's parent (e.g. a scroll list= or the owning window (e.g. ZO_PlayerInventory).\n\nYou can add new control names at the owner editbox below, and define for each onwer how many context menu rows and submenu rows should be shown.\n\nAlready added controls can be selected from the dropdown and their settings can be changed or the entry can be deleted then.\n\nYou can enable LSM for all controls (and blacklist some of them) or only some controls (need to whitelist them) below.",
+    SI_LSM_LAM_CNTXTMEN_DESC = "LibScrollableMenu (short: LSM) can replace the non-scrollable context menus of ESO (and LibCustomMenu).\n\nIf you enable the setting here you can choose which controls at the User-Interface (UI) should add the context menus via LSM instead.\nControl = either the control name below the mouse cursor (control = e.g. a single row of a scroll list), or it's parent (parent = e.g. the scroll list), or the owning window (owningWindow = e.g. ZO_PlayerInventory -> The player inventory).\n\nYou can add new control names at the owner editbox below, and define for each onwer how many context menu and submenu rows should be shown.\n\nAlready added controls can be selected from the dropdown and their settings can be changed, or the entry can be deleted again.\n\nYou can enable LSM for all controls (and blacklist some controls only) or whitelist only some controls (and maybe add whitelist exclusions: Disable some controls where their parent/owningWindow was whitelisted in total) below.",
     SI_LSM_LAM_CNTXTMEN_REPLACE = "Replace all ZO_Menu context menus",
     SI_LSM_LAM_CNTXTMEN_REPLACE_TT = "Replace the context menus (ZO_Menu, LibCustomMenu) with LibScrolableMenu's scrollable context menu",
-    SI_LSM_LAM_CNTXTMEN_OWNER_NAME = "Owner control name",
+    SI_LSM_LAM_CNTXTMEN_OWNER_NAME = "Owner - control name",
     SI_LSM_LAM_CNTXTMEN_OWNER_NAME_TT = "Enter the control name of a context menu owner here, e.g. ZO_PlayerInventory.\nPress the return key to update the add button's state.\n\nTo get the control name of the control below the cursor use the chat slash command /lsmmoc, and you will see the current control name, it's parentName and the owning window name in the chat.\nLSM will check for the control name first, then the parent and at the end the owning window name to determine if a control go the LSM context menu enabled (and to determine it's settings like the visible rows)",
-    SI_LSM_LAM_CNTXTMEN_VIS_ROWS = "Visible rows #",
-    SI_LSM_LAM_CNTXTMEN_VIS_ROWS_TT = "Choose the number of visible rows at the contextmenu of the owner's controlName",
 
     SI_LSM_LAM_CNTXTMEN_VIS_ROWS_DEF = "Visible rows #",
     SI_LSM_LAM_CNTXTMEN_VIS_ROWS_DEF_TT = "Choose the number of visible rows at the contextmenu's.\nWill be used for all contextmenus where no menu owner controlName is specified below.",
     SI_LSM_LAM_CNTXTMEN_VIS_ROWS_SUBMENU_DEF = "Default visible rows #, submenus",
     SI_LSM_LAM_CNTXTMEN_VIS_ROWS_SUBMENU_DEF_TT = "Choose the number of visible rows at the contextmenu's submenus.\nWill be used for all submenus where no menu owner controlName is specified below.",
-
+    SI_LSM_LAM_CNTXTMEN_VIS_ROWS = "Visible rows #",
+    SI_LSM_LAM_CNTXTMEN_VIS_ROWS_TT = "Choose the number of visible rows at the contextmenu of the owner's controlName",
     SI_LSM_LAM_CNTXTMEN_VIS_ROWS_SUBMENU = "Visible rows #, submenus",
     SI_LSM_LAM_CNTXTMEN_VIS_ROWS_SUBMENU_TT = "Choose the number of visible rows at the contextmenu's submenus of the owner's controlName",
     SI_LSM_LAM_CNTXTMEN_APPLY_VIS_ROWS = "Apply visibleRows",
@@ -30,9 +32,9 @@ local strings = {
     SI_LSM_LAM_CNTXTMEN_DELETE_OWNER_TT = "Delete the selected owner's controlName from the saved controls list",
 
     SI_LSM_LAM_CNTXTMEN_USE_FOR_ALL = "Use LSM for all controls",
-    SI_LSM_LAM_CNTXTMEN_USE_FOR_ALL_TT = "Use LibScrollableMenu's context menu for all controls in ESO.\n\nIf enabled: You can blacklist controls at the blacklist below.\nIf disabled: You must whitelist controls at the whitelist below.",
+    SI_LSM_LAM_CNTXTMEN_USE_FOR_ALL_TT = "Use LibScrollableMenu's context menu for all controls in ESO.\n\nIf enabled: You can blacklist controls at the blacklist below, which won't be shown with LSM context menu then.\nIf disabled: You must whitelist controls at the whitelist below, to show the LSM context menu.",
     SI_LSM_LAM_CNTXTMEN_WHITELIST = "Whitelisted controls",
-    SI_LSM_LAM_CNTXTMEN_WHITELIST_TT = "Only valid if you disable the setting \'Use LSM for all controls\'.\n\nThis list contains the whitelisted controls which will only show a LibScrollableMenu context menu.\nIf the control/parent control/owning window control is not on the list LSM won't be used and default ESO context menu (ZO_Menu, LibCustomMenu) will be used as usually.",
+    SI_LSM_LAM_CNTXTMEN_WHITELIST_TT = "Only valid if you disable the setting \'Use LSM for all controls\'.\n\nThis list contains the whitelisted controls which will only show a LibScrollableMenu context menu.\nIf the control/parent control/owning window control is on the list LSM will be used and default ESO context menu (ZO_Menu, LibCustomMenu) will not be used here.",
     SI_LSM_LAM_CNTXTMEN_BLACKLIST = "Blacklisted controls",
     SI_LSM_LAM_CNTXTMEN_BLACKLIST_TT = "Only valid if you enable the setting \'Use LSM for all controls\'.\n\nThis list contains the blacklisted controls which will not show a LibScrollableMenu context menu.\nIf the control/parent control/owning window control is on the list LSM won't be used and default ESO context menu (ZO_Menu, LibCustomMenu) will be used as usually.",
 
@@ -55,12 +57,12 @@ local strings = {
     SI_LSM_LAM_CNTXTMEN_WHITELISTEXCL_DEL_TT = "Delete the control name from the whitelist exclusion",
 
     SI_LSM_LAM_CNTXTMEN_FIRST_SUB_CALLBACK = "Select 1st submenu entry on click",
-    SI_LSM_LAM_CNTXTMEN_FIRST_SUB_CALLBACK_TT = "If an entry got a submenu and that entry was added by LibCustomMenu (and not LSM itsself):\nYou can click the entry that opens the submenu and it will automatically select the first submenu's entry that way, so you do not have to open the submenu and select the 1st entry manually.",
+    SI_LSM_LAM_CNTXTMEN_FIRST_SUB_CALLBACK_TT = "If an entry got a submenu and that entry is a normal entry:\nYou can click the entry that opens the submenu and it will automatically select the first submenu's entry, so you do not have to move the mouse cursor, open the submenu and select the 1st entry manually.",
     SI_LSM_LAM_CNTXTMEN_FIRST_SUB_IFONLYONE = "Only if submenu got # entries",
-    SI_LSM_LAM_CNTXTMEN_FIRST_SUB_IFONLYONE_TT = "Only automatically select the first submenu's entry if the submenu got this number of entries (default is 0 = Off/Do not check the #).",
+    SI_LSM_LAM_CNTXTMEN_FIRST_SUB_IFONLYONE_TT = "Only automatically select the first submenu's entry if the submenu got less or at least this number of entries (default is 0 = Off/Do not check the #).",
 
-
-    SI_LSM_MOC_TEMPLATE = "Control names - below the cursor: %s, parent: %s, owning window: %s"
+    --Chat output
+    SI_LSM_CHAT_MOC_TEMPLATE = "Control names - below the cursor: %s, parent: %s, owning window: %s"
 }
 
 for stringId, stringValue in pairs(strings) do

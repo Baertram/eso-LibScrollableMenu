@@ -192,7 +192,7 @@ local function showMOCInfoToChat()
 	if mocCtrl == nil then return end
 	local ownerName, ownerParentName, ownerOwningWindowName = getControlParentAndOwningWindowNames(mocCtrl)
 	if ownerName ~= nil or ownerParentName ~= nil or ownerOwningWindowName ~= nil then
-		d("[" .. MAJOR .."] " .. sfor(GetString(SI_LSM_MOC_TEMPLATE), tos(ownerName), tos(ownerParentName), tos(ownerOwningWindowName)))
+		d("[" .. MAJOR .."] " .. sfor(GetString(SI_LSM_CHAT_MOC_TEMPLATE), tos(ownerName), tos(ownerParentName), tos(ownerOwningWindowName)))
 	end
 end
 lib.ShowMOCInfoToChat = showMOCInfoToChat
