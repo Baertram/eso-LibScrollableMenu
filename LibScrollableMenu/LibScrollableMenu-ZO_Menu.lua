@@ -136,7 +136,7 @@ local contextMenuLookupBlackList = lib.contextMenuLookupLists.blackList
 --Library boolean to see if ZO_Menu functions were hooked by LSM, to replace ZO_Menu with LSM (could be inactive in the
 --settings but the hooks already change code and LSM methods need to react on that, e.g. at the contextMenu header text
 --editbox clicks)
-lib.ZO_MenuHookedForLSMReplacement = false
+lib.ZO_MenuHookedForLSMReplacement = nil
 
 --Counter for the ZO_Menu.items -> mapped to LSM entry already
 local LSMAlreadyMappedItemNum = 0
@@ -145,12 +145,7 @@ local lastAddedZO_MenuItemsIndex = 0
 
 --Table of last created (theoretically, not shown!) ZO_Menu items -> Which LSM will then show instead on next ShowMenu() call
 lib.ZO_MenuData = {} --Will be reset in LibScrollableMenu.lua, class method contextMenuClass:ZO_MenuHooks()
-lib.ZO_MenuData_CurrentIndex = 0
---Preventer variable to keep the current lib.ZO_MenuData entries (e.g. if ClearMenu() is called from ShowMenu() function)
-lib.preventClearCustomScrollableMenuToClearZO_MenuData = nil
---Explicitly call ClearMenu() of ZO_Menu if ClearCustomScrollableMenu() ( -> g_contextMenu:ClearItems()) is called?
---> See function contextMenuClass:ZO_MenuHooks()
-lib.callZO_MenuClearMenuOnClearCustomScrollableMenu = nil
+lib.ZO_MenuData_CurrentIndex = 0 -- Set the last added index of ZO_Menu, for next call to ShowMenu() so we can go on with the new added entries and do not repeat the already added ones. Resets in contextMenuClass:ZO_MenuHooks
 --Checkbox Controls of ZO_Menu where we need to monitor "the next" change of the state, so we can update the LSMentry in
 --lib.ZO_MenuData properly
 lib.ZO_Menu_cBoxControlsToMonitor = {}
@@ -161,8 +156,9 @@ lib.LCMLastAddedMenuItem                 = {}
 local LCMLastAddedMenuItem = lib.LCMLastAddedMenuItem
 
 --Preventer and other boolean varibles - used to change behavour of ClearMenu, ClearCustomScrollableMenu, ShowMenu and LSM contextMenuClass methods -> See contextMenuClass:ZO_MenuHooks()
-lib.callZO_MenuClearMenuOnClearCustomScrollableMenu = nil 		--true: Clear the ZO_Menu items via ClearMenu() call, as we clear the LSM context menu items. -> See contextMenuClass:ZO_MenuHooks()
+lib.callZO_MenuClearMenuOnClearCustomScrollableMenu = nil 		--true: Explicitly call ClearMenu() of ZO_Menu if ClearCustomScrollableMenu() ( -> g_contextMenu:ClearItems()) is called? -> See contextMenuClass:ZO_MenuHooks()
 lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu = nil	--true: Prevent the call to ClearCustomScrollableMenu from ClearMenu, if e.g. Chat context menu calls ShowMenu twice and shows LSM and ZO_Menu below LSM then. Only ClearMenu() is called then to clear the ZO_Menu
+lib.doNotResetPreventClearCustomScrollableMenuOnZO_MenuClearMenu = nil --true: Prevent the reset of variable lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu at ClearMenu() call once
 lib.preventClearCustomScrollableMenuToClearZO_MenuData = nil	--true: Prevent the clear of LSM internal "ZO_Menu replacement data" as ClearCustomScrollableMenu is called. -> See contextMenuClass:ZO_MenuHooks()
 lib.preventZO_Menu_Replacement_by_LSM = nil						--true: Prevent the next ZO_Menu replamcent by LSM -> Set via API function lib.PreventNextZO_MenuReplacementByLibScrollableMenu() and reset in ClearMenu()
 
@@ -184,6 +180,22 @@ local function updateZO_MenuVariables()
 	ZOMenu_SetSelectedIndex = ZO_Menu_SetSelectedIndex
 	ZOMenuHighlight = ZO_MenuHighlight
 end
+
+--Prevent call to LSM ClearCustomScrollableMenu() from ZO_Menu's "ClearMenu" -> If ZO_Menu replacement by LSM is enabled: ClearMenu is hooked and calls ClearCustomScrollableMenu
+--So if that hook is enabled, then do prevent the lose of LSM here
+local function checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall(doNotResetPreventClearCustomScrollableMenuOnZO_MenuClearMenu)
+	if lib.ZO_MenuHookedForLSMReplacement then
+		lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu = true
+
+		if doNotResetPreventClearCustomScrollableMenuOnZO_MenuClearMenu == true then
+			--Prevent the reset of the variable lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu on next ClearMenu() call? Makes it that any ClearMenu called in between
+			--(e.g. from filter header text editbox <OnTextChanged> in XML -> ClearMenu() called) does not reset the variable and the LSM menu closes then
+			-->Will be reset at the SecurePostHook, at end of ClearMenu() and at the LSM ZO_MenuData reset to nil again
+			lib.doNotResetPreventClearCustomScrollableMenuOnZO_MenuClearMenu = true
+		end
+	end
+end
+lib.checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall = checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall
 
 local function getControlParentAndOwningWindowNames(owner)
 	local ownerName, ownerParentName, ownerOwningWindowName
@@ -309,7 +321,7 @@ end
 
 --Hide currently shown context menus, LSM and ZO_Menu/LSM
 local function clearZO_MenuAndLSM()
-d("???????????????????????????????? [LSM]clearZO_MenuAndLSM")
+--d("???????????????????????????????? [LSM]clearZO_MenuAndLSM")
 	updateZO_MenuVariables()
 	ZOMenus:SetHidden(false)
 	ClearMenu()
@@ -339,7 +351,7 @@ end
 --so that ZO_Menu and LibCustomMenu work normal again
 local function clearInternalZO_MenuToLSMMappingData()
 	if debugLCM_ZO_Menu_Replacement then d("["..MAJOR.."]clearInternalZO_MenuToLSMMappingData") end
-d("[LSM]clearInternalZO_MenuToLSMMappingData")
+--d("[LSM]clearInternalZO_MenuToLSMMappingData")
 	LCMLastAddedMenuItem              = {}
 	lastAddedZO_MenuItemsIndex        = 0
 	lib.ZO_Menu_cBoxControlsToMonitor = {}
@@ -357,7 +369,7 @@ local function isAnyCustomScrollableZO_MenuContextMenuRegistered()
 
 	--Next ZO_Menu call should be handled via normal vanilla ZO_Menu? Will be reset in ClearMenu()
 	if lib.preventZO_Menu_Replacement_by_LSM then
-d("<<<<<<<<<<<< [LSM]isAnyCustomScrollableZO_MenuContextMenuRegistered -> preventZO_Menu_Replacement_by_LSM is true. Returning nil")
+--d("<<<<<<<<<<<< [LSM]isAnyCustomScrollableZO_MenuContextMenuRegistered -> preventZO_Menu_Replacement_by_LSM is true. Returning nil")
 		isAnyLSMContextMenuReplacementRegistered = nil
 	end
 	return isAnyLSMContextMenuReplacementRegistered
@@ -489,7 +501,8 @@ local function showMenuOwnerChecks(owner, menuDataOfLSM)
 		if debugLCM_ZO_Menu_Replacement then d("<ABORT: startIndex "  ..tos(startIndex).." > numItems: " ..tos(numItems)) end
 
 		--20241027 Bugfix for Chat menu showing it's ZO_Menu "below" the LSM context menu at the same time
-		lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu = true
+		checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall()
+
 		local zoMenuOwnerBackup = ZOMenu.owner
 		ClearMenu()
 		if ZOMenu.owner == nil then
@@ -1049,7 +1062,7 @@ local function addZO_Menu_ShowMenuHook()
 		--Grab the added data here and transfer it to our internal tables, as mapped LSM entryType, via function storeZO_MenuItemDataForLSM.
 		---Also checks for checkboxes that were added before and prepares their current state update properly as this might happen after the AddMenuItem function was called
 		local function LSM_AddMenuItemPostHook(labelText, onSelect, itemType, labelFont, normalColor, highlightColor, itemYPad, horizontalAlignment, isHighlighted, onEnter, onExit, enabled)
-d("[LSM]AAAAAAAAAAAAAAA - AddMenuItem - labelText: " .. tos(labelText))
+--d("[LSM]AAAAAAAAAAAAAAA - AddMenuItem - labelText: " .. tos(labelText))
 			updateZO_MenuVariables()
 			ZOMenus:SetHidden(false)
 
@@ -1142,7 +1155,7 @@ lib._debugContextMenuErrors[GetGameTimeMilliseconds()] = {
 
 		--Hook the ZO_Menu's ClearMenu function so we can clear our LSM variables too
 		local function LSM_ClearMenuPostHook()
-d("[LSM]CCCCCCCCCCCCCCCCCCC - ClearMenu - preventClearCustomScrollableMenuToClearZO_MenuData: " ..tos(lib.preventClearCustomScrollableMenuToClearZO_MenuData) .. ", preventClearCustomScrollableMenuOnZO_MenuClearMenu: " .. tos(lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu) .. ", preventZO_Menu_Replacement_by_LSM: " .. tos(lib.preventZO_Menu_Replacement_by_LSM))
+--d("[LSM]CCCCCCCCCCCCCCCCCCC - ClearMenu - preventClearCustomScrollableMenuToClearZO_MenuData: " ..tos(lib.preventClearCustomScrollableMenuToClearZO_MenuData) .. ", preventClearCustomScrollableMenuOnZO_MenuClearMenu: " .. tos(lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu) .. ", preventZO_Menu_Replacement_by_LSM: " .. tos(lib.preventZO_Menu_Replacement_by_LSM))
 			if debugLCM_ZO_Menu_Replacement then
 				d("<<<<<<<<<<<<<<<<<<<<<<<")
 				d("[LSM]ClearMenu - preventClearCustomScrollableMenuToClearZO_MenuData: " ..tos(lib.preventClearCustomScrollableMenuToClearZO_MenuData) .. ", preventClearCustomScrollableMenuOnZO_MenuClearMenu: " .. tos(lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu))
@@ -1155,13 +1168,38 @@ d("[LSM]CCCCCCCCCCCCCCCCCCC - ClearMenu - preventClearCustomScrollableMenuToClea
 
 			--Clear the existing LSM context menu entries too
 			if not lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu then
-d("//////////////////////////[LSM]clearCustomScrollableMenu")
+--d("//////////////////////////[LSM]clearCustomScrollableMenu")
+				--Resets the LSM.ZO_MenuData here now so next call to ShowMenu -> hook -> showMenuOwnerChecks wont prevent the proper build and direct show of a new LSM,
+				--if we right clicked an item to show LSM 1 and then directly right clicked another item to show LSM 2
 				clearCustomScrollableMenu()
 			end
-			lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu = nil
+			if not lib.doNotResetPreventClearCustomScrollableMenuOnZO_MenuClearMenu then
+				lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu = nil
+			end
+			lib.doNotResetPreventClearCustomScrollableMenuOnZO_MenuClearMenu = nil
 		end
 		SecurePostHook("ClearMenu", LSM_ClearMenuPostHook)
 		if debugLCM_ZO_Menu_Replacement then d(">>> PostHooked ClearMenu") end
+
+
+		local function LSM_ZO_Menu_ClickItemPreHook(control, button)
+			--Function will call "ClearMenu()" if a normal entry was selected so prevent the LSM context menu to close if this ZO_Menu entry was selected.
+			--But prevent the reset of the variable lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu so that any next ClearMenu() call in between
+			--(e.g. from filter header text editbox <OnTextChanged> in XML -> ClearMenu() called) does not reset the variable and the LSM menu closes then
+			-->Will be reset at the SecurePostHook, at end of ClearMenu() and at the LSM ZO_MenuData reset to nil again
+			checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall(true)
+			return false
+		end
+		ZO_PreHook("ZO_Menu_ClickItem", LSM_ZO_Menu_ClickItemPreHook)
+		if debugLCM_ZO_Menu_Replacement then d(">>> PreHooked ZO_Menu_ClickItem") end
+
+		--[[
+		local function LSM_ZO_Menu_ClickItemPostHook()
+			lib.doNotResetPreventClearCustomScrollableMenuOnZO_MenuClearMenu = nil
+		end
+		SecurePostHook("ZO_Menu_ClickItem", LSM_ZO_Menu_ClickItemPostHook)
+		if debugLCM_ZO_Menu_Replacement then d(">>> PostHooked ZO_Menu_ClickItem") end
+		]]
 
 
 		--PreHook the ShowMenu function of ZO_Menu in order to map the ZO_Menu.items to the LSM entries
@@ -1173,7 +1211,7 @@ d("//////////////////////////[LSM]clearCustomScrollableMenu")
 		--->The currently last added entry index will be stored in lib.ZO_MenuData_CurrentIndex, and we will only add the "new added" (after that index)
 		--->entries of our table lib.ZO_MenuData to the current menu then
 		local function LSM_ShowMenuPreHook(owner, initialRefCount, menuType)
-d("OOOOOOOOOOOOOOOOOOOOOOOOOOO [LSM]LSM_ShowMenuPreHook - preventLSMClosingZO_Menu: " .. tos(lib.preventLSMClosingZO_Menu) .. ", menuType: " .. tos(menuType) .. "; initialRefCount: " .. tos(initialRefCount) .. ", shiftKey: " .. tos(IsShiftKeyDown()))
+--d("OOOOOOOOOOOOOOOOOOOOOOOOOOO [LSM]LSM_ShowMenuPreHook - preventLSMClosingZO_Menu: " .. tos(lib.preventLSMClosingZO_Menu) .. ", menuType: " .. tos(menuType) .. "; initialRefCount: " .. tos(initialRefCount) .. ", shiftKey: " .. tos(IsShiftKeyDown()))
 			--Unhide the TLC so the menus of ZO_Menu will show properly in any case
 			ZOMenus:SetHidden(false)
 			--ZOMenu:SetDimensions(0, 0)
