@@ -1340,7 +1340,7 @@ end
 --If you call this function the next ZO_Menu (and LibCustomMenu) contextmenu will render with vanilla ESO ZO_Menu/LibCustomMenu
 -->Attention: Needs to be called AFTER ClearMenu() as ClearMenu will reset this variable again!
 function lib.PreventNextZO_MenuReplacementByLibScrollableMenu()
-d("!!!!!!!! [LSM]Set preventZO_Menu_Replacement_by_LSM = true")
+--d("!!!!!!!! [LSM]Set preventZO_Menu_Replacement_by_LSM = true")
 	if sv == nil or not sv.ZO_MenuContextMenuReplacement then return end
 	lib.preventZO_Menu_Replacement_by_LSM = true
 end

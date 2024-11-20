@@ -3218,13 +3218,13 @@ function dropdownClass:ShowFilterEditBoxHistory(filterBox)
 	local comboBox = self.m_comboBox
 	if comboBox ~= nil then
 		local comboBoxContainerName = comboBox:GetUniqueName()
-d("[LSM]dropdownClass:ShowFilterEditBoxHistory - comboBoxContainerName: " .. tos(comboBoxContainerName))
+--d("[LSM]dropdownClass:ShowFilterEditBoxHistory - comboBoxContainerName: " .. tos(comboBoxContainerName))
 		if comboBoxContainerName == nil or comboBoxContainerName == "" then return end
 		--Get the last saved text search (history) and show them as context menu
 		local textSearchHistory = sv.textSearchHistory[comboBoxContainerName]
 		if not ZO_IsTableEmpty(textSearchHistory) then
 			self.wasTextSearchContextMenuEntryClicked = nil
-d(">ClearMenu get's called")
+--d(">ClearMenu get's called")
 			checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall = checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall or lib.checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall
 			checkIfZO_MenuReplacementByLSMWasHookedAndPreventClearCustomScrollableMenuCall()
 			ClearMenu() --Attention, this resets lib.preventZO_Menu_Replacement_by_LSM to false!
