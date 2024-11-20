@@ -5730,7 +5730,9 @@ WORKING ON - Current version: 2.4
 	1. Feature: Add support for ZO_Menu, including LibCustomMenu, at the inventory right click context menus
 	2. Bug fix: Submenu options applied again via API function SetCustomScrollableMenuOptions did not apply (visibleRowsSubmenu e.g.)
 	3. Bug fix: Name of handler for context menu show and hide changed to proper Uppercase OnContextMenu*
-
+	4. todo Bug: 20241120 With ZO_Menu replacement entabled the right click on an inventory row opens the LSM menu but right clcikcing the next inventory row does not open the next LSM directly.
+	--You have to click twice.
+	-->Most probably ClearCustomScrollableMenu() does not get called properly on close of the first LSM context menu
 
 -------------------
 TODO - To check (future versions)
