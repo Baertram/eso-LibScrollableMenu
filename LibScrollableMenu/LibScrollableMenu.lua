@@ -3261,7 +3261,7 @@ end
 --Called from XML at e.g. the collapsible header's editbox, and other controls
 --Used for event handlers like OnMouseUp and OnChanged etc.
 function lib.OnXMLControlEventHandler(owningWindowFunctionName, refVar, ...)
-	d("[LSM]lib.OnXMLControlEventHandler - owningWindowFunctionName: " .. tos(owningWindowFunctionName))
+	--d("[LSM]lib.OnXMLControlEventHandler - owningWindowFunctionName: " .. tos(owningWindowFunctionName))
 
 	if refVar == nil or owningWindowFunctionName == nil then return end
 
