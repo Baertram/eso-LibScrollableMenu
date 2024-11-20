@@ -20,6 +20,10 @@ local LCM = LibCustomMenu
 --------------------------------------------------------------------
 --SavedVariables
 --------------------------------------------------------------------
+local svName = "LibScrollableMenu_SavedVars"
+lib.SV = {} --will be init properly at the onAddonLoaded function
+local sv = lib.SV
+
 --Add controls here (or parent controls, or owningWindow controls) which are allowed for ZO_Menu -> LSM mapping.
 -->LSM will be shown and used for them -> LibScrollableMenu does not hook into it
 local whitelistedControlNamesForZO_MenuReplacement = {
@@ -103,9 +107,6 @@ local lsmSVDefaults = {
 		}
 	}, 	--The context menu visible rows and submenu visible rows per owner (owningWindow or control opening the contextMenu)
 }
-local svName = "LibScrollableMenu_SavedVars"
-lib.SV = {} --will be init properly at the onAddonLoaded function
-local sv = lib.SV
 
 local function updateSavedVariable(svOptionName, newValue, subTableName)
 --d("[LSM]updateSavedVariable - svOptionName: " ..tostring(svOptionName) .. ", newValue: " ..tostring(newValue) ..", subTableName: " ..tostring(subTableName))
@@ -175,13 +176,20 @@ local EM = EVENT_MANAGER
 local SNM = SCREEN_NARRATION_MANAGER
 local tos = tostring
 local sfor = string.format
+local zostrlow = zo_strlower
 local tins = table.insert
 local trem = table.remove
 
 
 ------------------------------------------------------------------------------------------------------------------------
 --Library internal global locals
-local g_contextMenu -- The contextMenu (like ZO_Menu): Will be created at onAddonLoaded
+local g_contextMenu -- The contextMenu (like ZO_Menu): Will be created at onAddonLoaded -> via contextMenuClass:New(...)
+
+
+------------------------------------------------------------------------------------------------------------------------
+--Local speed-up references - functions
+local lib_PreventNextZO_MenuReplacementByLibScrollableMenu
+
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -197,6 +205,7 @@ local zo_comboBoxDropdown_onMouseExitEntry = ZO_ComboBoxDropdown_Keyboard.OnMous
 local zo_comboBoxDropdown_onMouseEnterEntry = ZO_ComboBoxDropdown_Keyboard.OnMouseEnterEntry
 
 local suppressNextOnGlobalMouseUp
+
 
 ------------------------------------------------------------------------------------------------------------------------
 --Logging
@@ -2512,7 +2521,7 @@ local filterFunc				--the filter function to use. Default is "defaultFilterFunc"
 -->Attention: prefix "/" in the filterString still jumps this function for submenus as non-matching will be always found that way!
 local function defaultFilterFunc(p_item, p_filterString)
 	local name = p_item.label or p_item.name
-	return zo_strlower(name):find(p_filterString) ~= nil
+	return zostrlow(name):find(p_filterString) ~= nil
 end
 
 --Check if entry should be added to the search/filter of the string search of the collapsible header
@@ -3167,16 +3176,16 @@ local function addTextSearchEditBoxTextToHistory(comboBox, filterBox, historyTex
 end
 
 function dropdownClass:WasTextSearchContextMenuEntryClicked(mocCtrl)
---d("dropdownClass:WasTextSearchContextMenuEntryClicked - wasTextSearchContextMenuEntryClicked: " ..tos(self.wasTextSearchContextMenuEntryClicked))
+d("dropdownClass:WasTextSearchContextMenuEntryClicked - wasTextSearchContextMenuEntryClicked: " ..tos(self.wasTextSearchContextMenuEntryClicked))
 	--Internal variable was set as we selected a ZO_Menu entry?
 	if self.wasTextSearchContextMenuEntryClicked then
 		self.wasTextSearchContextMenuEntryClicked = nil
---d(">wasTextSearchContextMenuEntryClicked was TRUE")
+d(">wasTextSearchContextMenuEntryClicked was TRUE")
 		return true
 	end
 	--Clicked control is known and the owner is ZO_Menus -> then assume we did open the ZO_Menu above an LSM and need the LSM to stay open
 	if mocCtrl ~= nil and mocCtrl:GetOwningWindow() == ZO_Menus then
---d(">ZO_Menus entry clicked!")
+d(">ZO_Menus entry clicked!")
 		return true
 	end
 	return false
@@ -3207,12 +3216,20 @@ function dropdownClass:ShowFilterEditBoxHistory(filterBox)
 	local comboBox = self.m_comboBox
 	if comboBox ~= nil then
 		local comboBoxContainerName = comboBox:GetUniqueName()
+d("[LSM]dropdownClass:ShowFilterEditBoxHistory - comboBoxContainerName: " .. tos(comboBoxContainerName))
 		if comboBoxContainerName == nil or comboBoxContainerName == "" then return end
 		--Get the last saved text search (history) and show them as context menu
 		local textSearchHistory = sv.textSearchHistory[comboBoxContainerName]
-		if textSearchHistory ~= nil then
+		if not ZO_IsTableEmpty(textSearchHistory) then
 			self.wasTextSearchContextMenuEntryClicked = nil
-			ClearMenu()
+d(">ClearMenu get's called")
+			ClearMenu() --Attention, this resets lib.preventZO_Menu_Replacement_by_LSM to false!
+
+			--Prevent this ZO_Menu to be rendered via LSM, because this would close the potential LSM context menu with
+			--the header, where we opened this "last searched history context menu from"
+			lib_PreventNextZO_MenuReplacementByLibScrollableMenu = lib_PreventNextZO_MenuReplacementByLibScrollableMenu or lib.PreventNextZO_MenuReplacementByLibScrollableMenu
+			lib_PreventNextZO_MenuReplacementByLibScrollableMenu()
+
 			for idx, textSearched in ipairs(textSearchHistory) do
 				if textSearched ~= "" then
 					AddMenuItem(tos(idx) .. ". " .. textSearched, function()
@@ -3221,36 +3238,79 @@ function dropdownClass:ShowFilterEditBoxHistory(filterBox)
 				end
 			end
 			if LibCustomMenu then
-				AddCustomMenuItem("-") --divider
+				AddCustomMenuItem("-") --if LCM is enabled. Add divider, for better readability
 			end
 			AddMenuItem("- " .. GetString(SI_STATS_CLEAR_ALL_ATTRIBUTES_BUTTON) .." - ", function()
 				clearTextSearchHistory(selfVar, comboBoxContainerName)
 			end)
 
-			--Prevent LSM Hook at ShowMenu to close LSM!!!
+			--Prevent LSM Hook at ShowMenu() to close the LSM below the cursor!!!
 			lib.preventLSMClosingZO_Menu = true
 			ShowMenu(filterBox)
+
 			ZO_Tooltips_HideTextTooltip()
+		end
+	end
+end
+
+--Called from XML at e.g. the collapsible header's editbox, and other controls
+--Used for event handlers like OnMouseUp and OnChanged etc.
+function lib.OnXMLControlEventHandler(owningWindowFunctionName, refVar, ...)
+	d("[LSM]lib.OnXMLControlEventHandler - owningWindowFunctionName: " .. tos(owningWindowFunctionName))
+	--[[
+		ZO_Tooltips_HideTextTooltip()
+		ClearMenu()
+		local owningWindow = self:GetOwningWindow()
+		if owningWindow.object then
+			owningWindow.object:SetFilterString(self)
+		end
+		ZO_Tooltips_HideTextTooltip()
+		ClearMenu()
+		local owningWindow = self:GetOwningWindow()
+		if owningWindow.object then
+			owningWindow.object:OnFilterEditBoxMouseUp(self, button, upInside)
+		end
+	]]
+
+	if refVar == nil or owningWindowFunctionName == nil then return end
+
+	--Prevent call to LSM ClearCustomScrollableMenu() from ZO_Menu's "ClearMenu" -> If ZO_Menu replacement by LSM is enabled: ClearMenu is hooked and calls ClearCustomScrollableMenu
+	--So if that hook is enabled, then do prevent the lose of LSM here
+	if lib.ZO_MenuHookedForLSMReplacement then
+		lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu = true
+	end
+	ClearMenu()
+
+	local owningWindow = refVar:GetOwningWindow()
+	local owningWindowObject = (owningWindow ~= nil and owningWindow.object) or nil
+	if owningWindowObject ~= nil then
+		local owningFunctionNameType = type(owningWindowFunctionName)
+		if owningFunctionNameType == "string" and type(owningWindowObject[owningWindowFunctionName]) == "function"  then
+			owningWindowObject[owningWindowFunctionName](owningWindowObject, ...)
+		elseif owningFunctionNameType == "function" then
+			owningWindowFunctionName(owningWindowObject, ...)
 		end
 	end
 end
 
 function dropdownClass:OnFilterEditBoxMouseUp(filterBox, button, upInside)
 	--Only react on right click
+	ZO_Tooltips_HideTextTooltip()
 	if not upInside or button ~= MOUSE_BUTTON_INDEX_RIGHT then return end
 
 	self:ShowFilterEditBoxHistory(filterBox)
 end
 
 function dropdownClass:ResetFilters(owningWindow)
---d("dropdownClass:ResetFilters")
+d("[LSM]dropdownClass:ResetFilters")
 	--If not showing the filters at a contextmenu
 	-->Close any opened contextmenu
 	if self.m_comboBox ~= nil and self.m_comboBox.openingControl == nil then
---d(">>ClearCustomScrollableMenu")
+d(">>calling ClearCustomScrollableMenu")
 		ClearCustomScrollableMenu()
 	end
 
+	ZO_Tooltips_HideTextTooltip()
 	if not owningWindow or not owningWindow.filterBox then return end
 	owningWindow.filterBox:SetText('') --calls dropdownClass:SetFilterString(filterBox)
 end
@@ -3275,6 +3335,7 @@ function dropdownClass:ShowTextTooltip(control, side, tooltipText, owningWindow)
 	--Do not show tooltip if the context menu at the search editbox is shown
 	if not ZO_Menu:IsHidden() or tooltipText == nil or tooltipText == "" then return end
 	--Do not show tooltip if cursor is in the search editbox (typing)
+	if owningWindow == nil and control.GetOwningWindow ~= nil then owningWindow = control:GetOwningWindow() end
 	if owningWindow ~= nil then
 		local searchFilterTextBox = owningWindow.filterBox
 		if searchFilterTextBox ~= nil and control == searchFilterTextBox and control:HasFocus() then return end
@@ -3713,9 +3774,8 @@ end
 function comboBox_base:HiddenForReasons(button)
 	local owningWindow, mocCtrl, comboBox, mocEntry = getMouseOver_HiddenFor_Info()
 	dLog(LSM_LOGTYPE_VERBOSE, "comboBox_base:HiddenForReasons - button: " .. tos(button))
---d("comboBox_base:HiddenForReasons - button: " .. tos(button))
+d("comboBox_base:HiddenForReasons - button: " .. tos(button))
 
-	--[[
 	LSM_debug = LSM_debug or {}
 	LSM_debug.HiddenForReasons = LSM_debug.HiddenForReasons or {}
 	local tabEntryName = getControlName(mocCtrl) or "n/a"
@@ -3729,7 +3789,6 @@ function comboBox_base:HiddenForReasons(button)
 		selfOwner = self.owner,
 		dropdownObjectOwner = self.m_dropdownObject.owner,
 	}
-	]]
 
 	local dropdownObject = self.m_dropdownObject
 	local isContextMenuVisible = g_contextMenu:IsDropdownVisible()
@@ -3738,27 +3797,27 @@ function comboBox_base:HiddenForReasons(button)
 	if isContextMenuVisible and not wasTextSearchContextMenuEntryClicked then
 		wasTextSearchContextMenuEntryClicked = g_contextMenu.m_dropdownObject:WasTextSearchContextMenuEntryClicked()
 	end
---d(">ownedByCBox: " .. tos(isOwnedByComboBox) .. ", isCtxtMenVis: " .. tos(isContextMenuVisible) ..", isCtxMen: " ..tos(self.isContextMenu) .. "; cntxTxtSearchEntryClicked: " .. tos(wasTextSearchContextMenuEntryClicked))
+d(">ownedByCBox: " .. tos(isOwnedByComboBox) .. ", isCtxtMenVis: " .. tos(isContextMenuVisible) ..", isCtxMen: " ..tos(self.isContextMenu) .. "; cntxTxtSearchEntryClicked: " .. tos(wasTextSearchContextMenuEntryClicked))
 
 	if isOwnedByComboBox == true or wasTextSearchContextMenuEntryClicked == true then
---d(">>isEmpty: " ..tos(ZO_IsTableEmpty(mocEntry)) .. ", enabled: " ..tos(mocEntry.enabled) .. ", mouseEnabled: " .. tos(mocEntry.IsMouseEnabled and mocEntry:IsMouseEnabled()))
+d(">>isEmpty: " ..tos(ZO_IsTableEmpty(mocEntry)) .. ", enabled: " ..tos(mocEntry.enabled) .. ", mouseEnabled: " .. tos(mocEntry.IsMouseEnabled and mocEntry:IsMouseEnabled()))
 		if ZO_IsTableEmpty(mocEntry) or (mocEntry.enabled and mocEntry.enabled ~= false) or (mocEntry.IsMouseEnabled and mocEntry:IsMouseEnabled()) then
 			if button == MOUSE_BUTTON_INDEX_LEFT then
 				--do not close or keep open based on clicked entry but do checks in contextMenuClass:GetHiddenForReasons instead
 				if isContextMenuVisible == true then
 					--Is the actual mocCtrl's owner the contextMenu? Or did we click some other non-context menu entry/control?
 					if owningWindow ~= g_contextMenu.m_container then
---d(">>>returing nothing because is or isOpened -> contextMenu. Going to GetHiddenForReasons")
+d(">>>returing nothing because is or isOpened -> contextMenu. Going to GetHiddenForReasons")
 						if wasTextSearchContextMenuEntryClicked == true then
---d(">>>returing false cuz textSearchEntry was selected")
+d(">>>returing false cuz textSearchEntry was selected")
 							return false
 						end
 					else
---d("<<returning contextmenu via mouseLeft -> closeOnSelect: " ..tos(mocCtrl.closeOnSelect))
+d("<<returning contextmenu via mouseLeft -> closeOnSelect: " ..tos(mocCtrl.closeOnSelect))
 						return mocCtrl.closeOnSelect and not self.m_enableMultiSelect
 					end
 				else
---d("<<returning via mouseLeft -> closeOnSelect: " ..tos(mocCtrl.closeOnSelect))
+d("<<returning via mouseLeft -> closeOnSelect: " ..tos(mocCtrl.closeOnSelect))
 					--Clicked entry should close after selection?
 					return mocCtrl.closeOnSelect and not self.m_enableMultiSelect
 				end
@@ -3772,7 +3831,7 @@ function comboBox_base:HiddenForReasons(button)
 
 	local hiddenForReasons
 	if not self.GetHiddenForReasons then
---d("<<self:GetHiddenForReasons is NIL! isContextMenuVisible: " .. tos(isContextMenuVisible))
+d("<<self:GetHiddenForReasons is NIL! isContextMenuVisible: " .. tos(isContextMenuVisible))
 --LSM_debug.HiddenForReasons[tabEntryName]._GetHiddenForReasonsMissing = true
 		return false
 	end
@@ -4431,7 +4490,8 @@ function comboBoxClass:IsFilterEnabled()
 end
 
 function comboBoxClass:SetFilterString(filterBox, newText)
-	self.filterString = (newText ~= nil and zo_strlower(newText)) or zo_strlower(filterBox:GetText())
+	ZO_Tooltips_HideTextTooltip()
+	self.filterString = (newText ~= nil and zostrlow(newText)) or zostrlow(filterBox:GetText())
 	self:UpdateResults(true)
 end
 
@@ -4789,6 +4849,8 @@ end
 --LSM v2.4 - ZO_Menu and LibCustomMenu hooks to make it compatible
 local isAnyCustomScrollableZO_MenuContextMenuRegistered
 function contextMenuClass:ZO_MenuHooks()
+	dLog(LSM_LOGTYPE_VERBOSE, "contextMenuClass:ZO_MenuHooks - isAnyCustomScrollableZO_MenuContextMenuRegistered: %s", tos(isAnyCustomScrollableZO_MenuContextMenuRegistered))
+--d("???????????????????????????? [LSM]contextMenuClass:ZO_MenuHooks - Called from ClearItems")
 	isAnyCustomScrollableZO_MenuContextMenuRegistered = isAnyCustomScrollableZO_MenuContextMenuRegistered or lib.IsAnyCustomScrollableZO_MenuContextMenuRegistered
 
 	--Did any addon, or LSM itsself via slash command /lsmcontextmenu, register a replacement hook of ZO_Menu -> with LSM?
@@ -4797,10 +4859,14 @@ function contextMenuClass:ZO_MenuHooks()
 		if lib.debugLCM_ZO_Menu_Replacement then d("["..MAJOR.."]ZO_MenuHooks - Resetting, because no LSM replacement of ZO_Menu is registered") end
 		lib.ZO_MenuData = {}
 		lib.ZO_MenuData_CurrentIndex = 0
-		lib.preventClearCustomScrollableMenuToClearZO_MenuData = false
-		lib.callZO_MenuClearMenuOnClearCustomScrollableMenu = false
-		lib.skipLSMClearOnOnClearMenu = false
 		lib.ZO_Menu_cBoxControlsToMonitor = {}
+
+		--Variable description, see file LibScrollableMenu-ZO_Menu.lua, "local variables for the ZO_Menu mapping"
+		lib.callZO_MenuClearMenuOnClearCustomScrollableMenu = nil
+
+		lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu = nil
+		lib.preventClearCustomScrollableMenuToClearZO_MenuData = nil
+		lib.preventZO_Menu_Replacement_by_LSM = nil
 		return
 	end
 
@@ -4815,12 +4881,14 @@ function contextMenuClass:ZO_MenuHooks()
 	end
 
 	--Clear the ZO_Menu items if we clear the LSM context menu items?
-	if lib.callZO_MenuClearMenuOnClearCustomScrollableMenu == true then
-		lib.callZO_MenuClearMenuOnClearCustomScrollableMenu = false
+	if lib.callZO_MenuClearMenuOnClearCustomScrollableMenu then
+		lib.callZO_MenuClearMenuOnClearCustomScrollableMenu = nil
 		if lib.debugLCM_ZO_Menu_Replacement then d("["..MAJOR.."]ZO_MenuHooks - Calling ClearMenu() because of callZO_MenuClearMenuOnClearCustomScrollableMenu = true") end
 		ClearMenu()
 	end
-	lib.skipLSMClearOnOnClearMenu = false
+
+	--Reset variables
+	lib.preventClearCustomScrollableMenuOnZO_MenuClearMenu = nil
 end
 
 function contextMenuClass:GetUniqueName()
@@ -5594,28 +5662,6 @@ local function onAddonLoaded(event, name)
 		hideCurrentlyOpenedLSMAndContextMenu()
 	end)
 
-	--ZO_Menu - ShowMenu hook: Hide LSM if a ZO_Menu menu opens
-	--[[
-	--Disabled here as this needs to be moved to file LibScrollableMenu-ZO_Menu.lua, PreHook of ShowMenu!
-	ZO_PreHook("ShowMenu", function(owner, initialRefCount, menuType)
-		dLog(LSM_LOGTYPE_VERBOSE, "ZO_Menu -> ShowMenu. Items#: " ..tos(#ZO_Menu.items) .. ", menuType: " ..tos(menuType))
-		--Do not close on other menu types (only default menu type supported)
-		if menuType ~= nil and menuType ~= MENU_TYPE_DEFAULT then return end
-
-		--No entries in ZO_Menu -> nothign will be shown, abort here
-		if next(ZO_Menu.items) == nil then
-			return false
-		end
-		--Should the ZO_Menu not close any opened LSM? e.g. to show the textSearchHistory at the LSM text filter search box
-		if lib.preventLSMClosingZO_Menu == true then
-			lib.preventLSMClosingZO_Menu = nil
-			return
-		end
-		hideCurrentlyOpenedLSMAndContextMenu()
-		return false
-	end)
-	]]
-
 	--Build the library settings menu if LAM is available
 	lib.BuildLAMSettingsMenu()
 
@@ -5690,6 +5736,9 @@ WORKING ON - Current version: 2.4
 	1. Feature: Add support for ZO_Menu, including LibCustomMenu, at the inventory right click context menus
 	2. Bug fix: Submenu options applied again via API function SetCustomScrollableMenuOptions did not apply (visibleRowsSubmenu e.g.)
 	3. Bug fix: Name of handler for context menu show and hide changed to proper Uppercase OnContextMenu*
+	4. TODO 20241117 Bug fix: If ZO_Menu repalcement by LSM was enabled at least once!!! Context menu's header edit box (Search filter), clicked left or right, closes the context menu
+	5. TODO 20241117 Bug fix: If ZO_Menu repalcement by LSM was enabled at least once!!! Header edit box (Search filter) right click "Last searched history" does only show once and then never again?
+
 
 -------------------
 TODO - To check (future versions)

@@ -18,13 +18,15 @@ lang/$(language).lua
 
 ##Library lua code files
 LibScrollableMenu.lua
-LibScrollableMenu-LAMSettings.lua
 
 ##Library XML templates files
 LibScrollableMenu.xml
 
 ## Add support for ZO_Menu context menus
 LibScrollableMenu-ZO_Menu.lua
+
+##Library LAM settings files
+LibScrollableMenu-LAMSettings.lua
 
 
 ## Uncomment this to test the combobox with different menu entryTypes and submenus

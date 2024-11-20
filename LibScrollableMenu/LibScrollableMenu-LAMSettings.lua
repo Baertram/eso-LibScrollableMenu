@@ -63,21 +63,53 @@ local function buildControlListsNew()
 	local existingWhiteListLoc = {}
 	local existingWhiteListExclusionLoc = {}
 	local existingBlackListLoc = {}
+
 	sv = lib.SV
-	if sv and sv.contextMenuReplacementControls ~= nil then
-		for _, controlName in ipairs(sv.contextMenuReplacementControls.whiteList) do
-			existingWhiteListLoc[#existingWhiteListLoc + 1] = controlName
-			lib.contextMenuLookupLists.whiteList[controlName] = true
-		end
-		for _, controlName in ipairs(sv.contextMenuReplacementControls.whiteListExclusion) do
+	local contextMenuReplacementControls = sv and sv.contextMenuReplacementControls
+
+	if contextMenuReplacementControls ~= nil then
+		local whiteList = contextMenuReplacementControls.whiteList
+		local whiteListExclusion = contextMenuReplacementControls.whiteListExclusion
+		local blackList = contextMenuReplacementControls.blackList
+
+		--Whitelist exclusion (use ZO_Menu for childControl of  whitelisted parent/owningWindow -> which should use LSM)
+		local whiteListToBeRemovedControlNames = {}
+		for _, controlName in ipairs(whiteListExclusion) do
 			existingWhiteListExclusionLoc[#existingWhiteListExclusionLoc + 1] = controlName
 			lib.contextMenuLookupLists.whiteListExclusionList[controlName] = true
+
+			--Is the same whitelistExclusion controlName on the whitelist too? Then remove it from the whitelist
+			--as it makes no sense to have the same controls on both lists. Only the parent or owningControl should
+			--be on the whitelist then, and the child control on the whitelistExclusion
+			if whiteList[controlName] then
+				whiteListToBeRemovedControlNames[controlName] = true
+			end
 		end
-		for _, controlName in ipairs(sv.contextMenuReplacementControls.blackList) do
+
+		--Whitelist (use LSM)
+		local whiteListToBeRemovedIndices = {}
+		for idx, controlName in ipairs(whiteList) do
+			if whiteListToBeRemovedControlNames[controlName] then
+				whiteListToBeRemovedIndices[idx] = true
+			else
+				existingWhiteListLoc[#existingWhiteListLoc + 1] = controlName
+				lib.contextMenuLookupLists.whiteList[controlName] = true
+			end
+		end
+		--Clean up WhiteList SV -> Remove entries which are on Whitelist exclusion too
+		for indexToBeRemoved, doRemove in pairs(whiteListToBeRemovedIndices) do
+			if doRemove == true then
+				trem(sv.contextMenuReplacementControls.whiteList, indexToBeRemoved)
+			end
+		end
+
+		--Blacklist (use ZO_Menu)
+		for _, controlName in ipairs(blackList) do
 			existingBlackListLoc[#existingBlackListLoc + 1] = controlName
 			lib.contextMenuLookupLists.blackList[controlName] = true
 		end
 	end
+
 	contextMenuLookupWhiteList = lib.contextMenuLookupLists.whiteList
 	contextMenuLookupWhiteListExclusionList = lib.contextMenuLookupLists.whiteListExclusionList
 	contextMenuLookupBlackList = lib.contextMenuLookupLists.blackList
