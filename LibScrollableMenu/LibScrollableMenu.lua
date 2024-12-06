@@ -70,8 +70,8 @@ local whitelistedControlNamesForZO_MenuReplacement = {
 --Add controls here (or parent controls, or owningWindow controls) which got blacklisted for ZO_Menu -> LSM mapping.
 -->ZO_Menu will be shown and used normally for them and LibScrollableMenu does not hook into it
 local blacklistedControlsForZO_MenuReplacement = {
-	--Chat editbox
-	--["ZO_ChatWindowTextEntryEditBox"] = true,
+	--Collections - As else the preview context menu entry raises an called from insecure code error
+	["ZO_CollectionsBook_TopLevel"] = true,
 }
 
 --The context menu replacement lookup lists
@@ -5724,6 +5724,33 @@ LibScrollableMenu = lib
 ------------------------------------------------------------------------------------------------------------------------
 
 --[[
+With /lsmcontextmenu ON this error appers while right clicking inventory item and then choosing destroy
+
+/EsoUI/Ingame/Inventory/InventorySlot.lua:1155: Attempt to access a private function 'PickupInventoryItem' from insecure code. The callstack became untrusted 7 stack frame(s) from the top.
+|rstack traceback:
+/EsoUI/Ingame/Inventory/InventorySlot.lua:1155: in function 'ZO_InventorySlot_InitiateDestroyItem'
+|caaaaaa<Locals> inventorySlot = ud, bag = 1, index = 144 </Locals>|r
+/EsoUI/Ingame/Inventory/InventorySlot.lua:1829: in function 'callback'
+/EsoUI/Libraries/ZO_ComboBox/ZO_ComboBox_Base.lua:245: in function 'ZO_ComboBox_Base:ItemSelectedClickHelper'
+|caaaaaa<Locals> self = [table:1]{isContextMenu = T, m_isDropdownVisible = T, headerCollapsed = F, optionsChanged = T, visibleRowsSubmenu = 20, breadcrumbName = "ContextmenuBreadcrumb", baseEntryHeight = 25, m_font = "ZoFontGame", m_sortOrder = T, filterString = "", horizontalAlignment = 0, m_name = "LibScrollableMenu_ContextMenu...", m_nextFree = 2, currentSelectedItemText = "Zerstören", m_spacing = 0, m_containerWidth = 135, m_height = 510, visibleRows = 20, m_enableMultiSelect = F, m_sortsItems = F, m_highlightTemplate = "ZO_SelectionHighlight", disableFadeGradient = F, itemYPad = 0}, item = [table:2]{entryType = 1, isHeader = F, isRadioButton = F, hasSubmenu = F, isCheckbox = F, enabled = T, isNew = F, m_horizontalAlignment = 0, customEntryTemplate = "LibScrollableMenu_ComboBoxEntr...", name = "Zerstören", m_itemYPad = 0, m_font = "ZoFontGame", isButton = F, isDivider = F}, selectionChanged = T </Locals>|r
+(tail call): ?
+(tail call): ?
+/EsoUI/Libraries/ZO_ComboBox/ZO_ComboBox.lua:149: in function 'ZO_ComboBox:SetSelected'
+|caaaaaa<Locals> self = [table:1], index = 4, item = [table:2] </Locals>|r
+/EsoUI/Libraries/ZO_ComboBox/ZO_ComboBox.lua:629: in function 'ZO_ComboBoxDropdown_Keyboard:OnEntrySelected'
+|caaaaaa<Locals> self = [table:3]{spacing = 0, nextScrollTypeId = 17}, control = ud </Locals>|r
+user:/AddOns/LibScrollableMenu/LibScrollableMenu.lua:2936: in function 'dropdownClass:OnEntryMouseUp'
+|caaaaaa<Locals> self = [table:3], control = ud, button = 1, upInside = T, data = [table:2], comboBox = [table:1] </Locals>|r
+LibScrollableMenu_ContextMenu1Scroll3Row1_MouseUp:7: in function '(main chunk)'
+|caaaaaa<Locals> self = ud, button = 1, upInside = T, ctrl = F, alt = F, shift = F, command = F, dropdown = [table:3] </Locals>|r
+
+
+
+With /lsmcontextmenu ON this error appers while right clicking collectible/skin at collections item and then choosing preview
+--todo
+
+
+
 -------------------
 WORKING ON - Current version: 2.4
 -------------------

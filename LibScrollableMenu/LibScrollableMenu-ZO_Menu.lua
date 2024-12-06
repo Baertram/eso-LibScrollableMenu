@@ -120,6 +120,18 @@ local listRowsAllowedPatternsForContextMenu = {
 }
 ]]
 
+--Entries of ZO_Menu context menu where we cannot map it 1:1 to LSM
+-->e.g. it raises "Called from insecure code" then
+local specialZO_MenuEntries = {
+	--Name of the owningWindow
+	["ZO_PlayerInventory"] = {
+		--The relating ZO_Menu.items[n] label text to identify it
+		[GetString(SI_ITEM_ACTION_DESTROY)] = {
+			replacementFunc = function(...) d("Drag & drop the item out of the inventory to destroy it!")  end
+		},
+	}
+}
+
 --The table with the already registered LSM context menu hooks
 -->See API function lib.RegisterZO_MenuContextMenuReplacement below
 local registeredCustomScrollableContextMenus        = {}
@@ -219,6 +231,22 @@ local function showMOCInfoToChat()
 end
 lib.ShowMOCInfoToChat = showMOCInfoToChat
 
+local function getOwningWindowName(ctrl)
+	local owningWindow = ctrl and ctrl.GetOwningWindow and ctrl:GetOwningWindow()
+	if owningWindow ~= nil then
+		return getControlName(owningWindow)
+	end
+	return
+end
+
+local function getParentName(ctrl)
+	local parent = ctrl and ctrl.GetParent and ctrl:GetParent()
+	if parent ~= nil then
+		return getControlName(parent)
+	end
+	return
+end
+
 local function checkIfControlOnWhiteListExclusionList(controlNames)
 	if controlNames ~= nil then
 		for _, controlName in ipairs(controlNames) do
@@ -235,29 +263,23 @@ local function isAllowedControl(owner)
 		contextMenuLookupWhiteList = lib.contextMenuLookupLists.whiteList
 		contextMenuLookupWhiteListExclusionList = lib.contextMenuLookupLists.whiteListExclusionList
 
-		local parentName, owningWindowName
 		local ownerName = getControlName(owner)
+		local parentName = getParentName(owner)
+		local owningWindowName = getOwningWindowName(owner)
+
 		if ownerName ~= nil and contextMenuLookupWhiteList[ownerName] then
 			if checkIfControlOnWhiteListExclusionList({ ownerName }) == false then
-				return true, ownerName, nil, nil
+				return true, ownerName, parentName, owningWindowName
 			end
 		end
-		local parent = owner.GetParent and owner:GetParent()
-		if parent ~= nil then
-			parentName = getControlName(parent)
-			if parentName ~= nil and contextMenuLookupWhiteList[parentName] then
-				if checkIfControlOnWhiteListExclusionList({ parentName, ownerName }) == false then
-					return true, ownerName, parentName, nil
-				end
+		if parentName ~= nil and contextMenuLookupWhiteList[parentName] then
+			if checkIfControlOnWhiteListExclusionList({ parentName, ownerName }) == false then
+				return true, ownerName, parentName, owningWindowName
 			end
-			local owningWindow = owner.GetOwningWindow and owner:GetOwningWindow()
-			if owningWindow ~= nil then
-				owningWindowName = getControlName(owningWindow)
-				if owningWindowName ~= nil and contextMenuLookupWhiteList[owningWindowName] then
-					if checkIfControlOnWhiteListExclusionList({ owningWindowName, parentName, ownerName }) == false then
-						return true, ownerName, parentName, owningWindowName
-					end
-				end
+		end
+		if owningWindowName ~= nil and contextMenuLookupWhiteList[owningWindowName] then
+			if checkIfControlOnWhiteListExclusionList({ owningWindowName, parentName, ownerName }) == false then
+				return true, ownerName, parentName, owningWindowName
 			end
 		end
 		return false, ownerName, parentName, owningWindowName
@@ -274,25 +296,22 @@ local function isBlacklistedControl(owner)
 		contextMenuLookupBlackList = lib.contextMenuLookupLists.blackList
 
 		local ownerName = getControlName(owner)
+		local parentName = getParentName(owner)
+		local owningWindowName = getOwningWindowName(owner)
+
 		if ownerName ~= nil and contextMenuLookupBlackList[ownerName] then
-			return true, ownerName
+			return true, ownerName, parentName, owningWindowName
 		end
-		local parent = owner.GetParent and owner:GetParent()
-		if parent ~= nil then
-			ownerName = getControlName(parent)
-			if ownerName ~= nil and contextMenuLookupBlackList[ownerName] then
-				return true, ownerName
-			end
-			local owningWindow = owner.GetOwningWindow and owner:GetOwningWindow()
-			if owningWindow ~= nil then
-				ownerName = getControlName(owningWindow)
-				if ownerName ~= nil and contextMenuLookupBlackList[ownerName] then
-					return true, ownerName
-				end
-			end
+		if parentName ~= nil and contextMenuLookupBlackList[parentName] then
+			return true, ownerName, parentName, owningWindowName
 		end
+		if owningWindowName ~= nil and contextMenuLookupBlackList[owningWindowName] then
+			return true, ownerName, parentName, owningWindowName
+		end
+		return false, ownerName, parentName, owningWindowName
 	end
-	return false, nil
+	--No owner found -> Okay to be used with LSM (e.g. chat stuff)
+	return false, nil, nil, nil
 end
 
 --[[ Check if a row's name pattern matches the predefined table of row patterns - Currently disabled as this is controlled via the settings menu whitelists/blacklists
@@ -466,11 +485,13 @@ local function showMenuOwnerChecks(owner, menuDataOfLSM)
 		return false -- run original ZO_Menu's ShowMenu()
 	end
 
+	local isAllowed, isBlocked, ownerName, parentName, owningWindowName
+
 	--Context menu replacement is globally active for all ZO_Menu/LibCustomMenu?
 	if sv.contextMenuReplacementControls.replaceAll == true then
 		--Only check blacklisted controls then
 		--Is the control blocked?
-		local isBlocked, ownerName = isBlacklistedControl(owner)
+		isBlocked, ownerName, parentName, owningWindowName = isBlacklistedControl(owner)
 		if isBlocked == true then
 			if debugLCM_ZO_Menu_Replacement then d("<ABORT: Menu owner " .. tos(ownerName) .. " is a blocked control") end
 			resetZO_MenuClearVariables()
@@ -479,7 +500,7 @@ local function showMenuOwnerChecks(owner, menuDataOfLSM)
 	else
 		--Check WhiteListed controls
 		--Is the control allowed to exchange ZO_Menu? e.g. inventory context menu
-		local isAllowed, ownerName, parentName, owningWindowName = isAllowedControl(owner)
+		isAllowed, ownerName, parentName, owningWindowName = isAllowedControl(owner)
 		if isAllowed == false then
 			if debugLCM_ZO_Menu_Replacement then d("<ABORT: Menu owner " .. tos(ownerName) .. " is not allowed for LSM usage") end
 			resetZO_MenuClearVariables()
@@ -520,6 +541,26 @@ local function showMenuOwnerChecks(owner, menuDataOfLSM)
 
 		if lsmEntry ~= nil and lsmEntry.name ~= nil then
 			if debugLCM_ZO_Menu_Replacement then d("~~~~ Add item of ZO_Menu["..tos(idx).."]: " ..tos(lsmEntry.name)) end
+
+			--Check if the entry is a special one
+			--local mocCtrl = moc()
+			--if mocCtrl ~= nil and mocCtrl.GetOwningWindow then
+				--local owningWindowName = getControlName(mocCtrl:GetOwningWindow())
+				if owningWindowName ~= nil then
+					local specialEntriesOfOwningWindow = specialZO_MenuEntries[owningWindowName]
+					if specialEntriesOfOwningWindow ~= nil then
+						local entryText = lsmEntry.label or lsmEntry.name
+						local specialEntryData = specialEntriesOfOwningWindow[entryText]
+						if specialEntryData ~= nil and specialEntryData.replacementFunc then
+--d("##### [LSM]storeZO_MenuItemDataForLSM - idx: " .. tos(idx) ..", specialEntry of \'"  .. owningWindowName ..  "\: '" .. tos(entryText))
+							local origCallbackFunc = lsmEntry.callback
+							lsmEntry.callbackOrig = origCallbackFunc
+							--Use the replacementFunc here
+							lsmEntry.callback = specialEntryData.replacementFunc
+						end
+					end
+				end
+			--end
 
 			--Add the menu entry now to LibScrollableMenu's context menu, instead of ZO_Menu
 			--->pass in lsmEntry as additionlData (last parameter) so m_normalColor etc. will properly be applied to the entry too
@@ -952,7 +993,7 @@ local function storeZO_MenuItemDataForLSM(index, mytext, myfunction, itemType, m
 			["entries"] = entries,
 		}
 		lastAddedZO_MenuItem.item.entryData = dataToAdd
---d(">lastAddedZO_MenuItem.item.submenuData set for '"..tos(mytext).."', entries: " .. tos(entries) .. ", myFunction: " .. tos(myfunction))
+		--d(">lastAddedZO_MenuItem.item.submenuData set for '"..tos(mytext).."', entries: " .. tos(entries) .. ", myFunction: " .. tos(myfunction))
 		lastAddedZO_MenuItem.item.submenuData = (entries ~= nil and dataToAdd) or nil
 
 		--Map the entry of ZO_Menu to LSM entries now and add it to our internal ZO_MenuData table
@@ -968,7 +1009,7 @@ end
 
 
 ---- HOOKs ----
---Add a hook to the SHowMenu() function, if any addon registered a custom LSM replacement for ZO_menu via API function lib.RegisterZO_MenuContextMenuReplacement(addonName)
+--Add a hook to the ShowMenu() function, if any addon registered a custom LSM replacement for ZO_menu via API function lib.RegisterZO_MenuContextMenuReplacement(addonName)
 local function addZO_Menu_ShowMenuHook()
 	if debugLCM_ZO_Menu_Replacement then d("["..MAJOR.."]addZO_Menu_ShowMenuHook") end
 	updateZO_MenuVariables()
@@ -1066,7 +1107,7 @@ local function addZO_Menu_ShowMenuHook()
 			updateZO_MenuVariables()
 			ZOMenus:SetHidden(false)
 
---todo 2024119 What abut any AddMenuItem() and ShowMenu() calls delayed via zo_callLater(function() end, 50) e.g.?
+--todo 2024119 What about any AddMenuItem() and ShowMenu() calls delayed via zo_callLater(function() end, 50) e.g.?
 --todo How do we detect those properly here and keep the LSM menu opened and "add" the late entries? Currently the ZO-Menu and/or LSM closes in between somehow
 
 			--As we are in a PostHook: We need to get back to last index to compare it properly!
