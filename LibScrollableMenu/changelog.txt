@@ -1,3 +1,9 @@
+-v- ---------------LSM v2.42 - 2026-04-30--------------------------------------------------------------------------- -v-
+[Fixed]
+--#2026_07 Pattern parsing error if search term in filter header editBox was using non-escaped special character like (
+--#2026_08 ContextMenu at a slider / editbox does not open if right clicked on the name label (or the label at the right side of the slider)
+
+
 -v- ---------------LSM v2.41 - 2026-02-23--------------------------------------------------------------------------- -v-
 [KNOWN PROBLEMS]
 #2026_01 After a LSM contextMenu was shown and a checkbox was clicked (on the checkbox's label!), the next opened contextMenu's checkbox label
