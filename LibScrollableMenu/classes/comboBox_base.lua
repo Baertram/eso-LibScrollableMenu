@@ -73,6 +73,8 @@ local itemTextsOfNothingFound = {
 	[noEntriesSubmenuResultsText] = true,
 	[noEntriesResultsText] = true,
 }
+local editBoxCtrlsContextmenuRegistered = {} --#2026_08
+local sliderCtrlsContextmenuRegistered = {} --#2026_08
 
 local libUtil = lib.Util
 local getControlName = libUtil.getControlName
@@ -103,7 +105,7 @@ local iconNewIcon = textureConstants.iconNewIcon
 local iconNarrationNewValue = narrationConstants.iconNarrationNewValue
 
 local g_contextMenu
-
+local clearCustomScrollableMenu
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -119,7 +121,8 @@ local g_contextMenu
 -->Attention: prefix "/" in the filterString still jumps this function for submenus as non-matching will be always found that way!
 local function defaultFilterFunc(p_item, p_filterString)
 	local name = p_item.label or p_item.name
-	return zostrlow(name):find(p_filterString) ~= nil
+	local filterStringClean = p_filterString:gsub("([^%w])", "%%%1")  --#2026_07 string pattern error if search text contains a (, e.g. d(
+	return zostrlow(name):find(filterStringClean) ~= nil
 end
 
 
@@ -619,7 +622,8 @@ local function closeContextMenuAndSuppressClickCheck(checkOnlyMultiSelectionAtCo
 	if not checkOnlyMultiSelectionAtContextMenu or (checkOnlyMultiSelectionAtContextMenu and g_contextMenu.m_enableMultiSelect == true) then
 		if not isMouseOverOwningDropdown and not clickedEntryBelongsToContextMenu then --#2025_19 How to prevent context menu close if multiselection is enabled and we clicked an entry which is not above any LSM combobox, but belongs to the actual contextmenu?
 			--d(">>context menu is opened and clicked somewhere else -> Hide the contextMenu now")
-			ClearCustomScrollableMenu()
+			clearCustomScrollableMenu = clearCustomScrollableMenu or ClearCustomScrollableMenu
+			clearCustomScrollableMenu()
 			--20250309 Prevent the next dropdownClass:OnEntryMouseUp being fired if we clicked inside an LSM (only the contextMenu should close!)
 			--d("1!!! Setting suppressNextOnEntryMouseUp = true !!!")
 			lib.preventerVars.suppressNextOnEntryMouseUp = true
@@ -635,7 +639,8 @@ local function closeContextMenuAndSuppressClickCheck(checkOnlyMultiSelectionAtCo
 		-->E.g. a submenu entry of a LSM
 		if not isMouseOverOwningDropdown and not clickedEntryBelongsToContextMenu then
 			--d(">>context menu is opened and clicked somewhere else, e.g. submenu -> Hide the contextMenu now")
-			ClearCustomScrollableMenu()
+			clearCustomScrollableMenu = clearCustomScrollableMenu or ClearCustomScrollableMenu
+			clearCustomScrollableMenu()
 			--20250309 Prevent the next dropdownClass:OnEntryMouseUp being fired if we clicked inside an LSM (only the contextMenu should close!)
 			--d("2!!! Setting suppressNextOnEntryMouseUp = true !!!")
 			lib.preventerVars.suppressNextOnEntryMouseUp = true
@@ -2013,7 +2018,7 @@ do -- Row setup functions
 		local editBoxData = control.editBoxData
 		if type(editBoxData) ~= "table" then return end
 
-		--local labelCtrl  = control.m_label
+		local labelCtrl  = control.m_label
 		local editCtrl = control:GetNamedChild("Edit")
 		local editBoxCtrl = editCtrl:GetNamedChild("Box")
 		editBoxCtrl.rowControl = control --reference to the actual row's control having the m_data table
@@ -2022,23 +2027,40 @@ do -- Row setup functions
 		updateEditBoxText(control, editBoxData, editBoxCtrl)
 
 		----EditBox - HANDLERS
+		labelCtrl:SetMouseEnabled(false) --#2026_08
 		--contextMenuCallback -- ContextMenu at the editBox
 		local contextMenuCallback = editBoxData.contextMenuCallback
 		if type(contextMenuCallback) == "function" then
+			local function showEditBoxContextMenu(p_editBox)
+				ZO_Tooltips_HideTextTooltip()
+				--Show the contextMenu now
+				contextMenuCallback(p_editBox)
+			end
+
 			editBoxCtrl:SetMouseEnabled(true)
 			editBoxCtrl:SetHandler("OnMouseUp", nil)
 			editBoxCtrl:SetHandler("OnMouseUp", function(p_editBox, button, upInside, ctrl, alt, shift)
 				if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
 					--Remove the cursor from the editbox
-					p_editBox:LoseFocus()
-					--Show the contextMenu now
-					contextMenuCallback(p_editBox)
+					showEditBoxContextMenu(p_editBox)
 				end
 			end)
+
+			labelCtrl:SetMouseEnabled(true) --#2026_08
+			if not editBoxCtrlsContextmenuRegistered[editBoxCtrl] then --#2026_08
+				editBoxCtrlsContextmenuRegistered[editBoxCtrl] = true
+				labelCtrl:SetHandler("OnMouseUp", function(p_editBox, button, upInside, ctrl, alt, shift)
+					if not upInside then return end
+					if button == MOUSE_BUTTON_INDEX_RIGHT then
+						showEditBoxContextMenu(p_editBox)
+					end
+				end)
+			end
+
 		end
 
 		--EditBox & label Dimensions width/height etc.
-		--Slightly delay this so the controls are updated properly before (e.g. row's width)
+		--Slightly delay this to next frame so the controls are updated properly before (e.g. row's width)
 		zo_callLater(function()
 			reAnchorEditBoxControlsInRow(control)
 		end, 0)
@@ -2144,16 +2166,14 @@ do -- Row setup functions
 		end
 
 		local offsetX = (hideLabel == true and 0) or 4
+		sliderCtrl:ClearAnchors()
+		sliderCtrl:SetAnchor(LEFT, labelCtrl, RIGHT, offsetX)
 		if widthOrHeightChanged == true then
-			sliderCtrl:ClearAnchors()
 			sliderCtrl:SetDimensionConstraints(0, 0, width, height)
 			sliderCtrl:SetDimensions(width, height)
-			sliderCtrl:SetAnchor(LEFT, labelCtrl, RIGHT, offsetX)
 		else
-			sliderCtrl:ClearAnchors()
 			sliderCtrl:SetDimensionConstraints(20, 5, width, height)
 			sliderCtrl:SetDimensions(width, height)
-			sliderCtrl:SetAnchor(LEFT, labelCtrl, RIGHT, offsetX)
 		end
 	end
 
@@ -2162,7 +2182,7 @@ do -- Row setup functions
 		local sliderData = control.sliderData
 		if type(sliderData) ~= "table" then return end
 
-		--local labelCtrl  = control.m_label
+		local labelCtrl  = control.m_label
 		local sliderContainerCtrl = control:GetNamedChild("SliderContainer")
 		local sliderCtrl = sliderContainerCtrl:GetNamedChild("Slider")
 		sliderCtrl.rowControl = control --reference to the actual row's control having the m_data table
@@ -2231,17 +2251,39 @@ do -- Row setup functions
 			contextMenuCallback = nil
 		end
 
+		local sliderGotContextMenu = contextMenuCallback ~= nil --#2026_08
+		local function showSliderContextMenu(p_sliderCtrl) --#2026_08
+			if not sliderGotContextMenu then return end
+			ZO_Tooltips_HideTextTooltip()
+			contextMenuCallback(p_sliderCtrl)
+		end
+		labelCtrl:SetMouseEnabled(sliderGotContextMenu) --#2026_08
+		sliderValueLabel:SetMouseEnabled(sliderGotContextMenu) --#2026_08
+		if sliderGotContextMenu == true and not sliderCtrlsContextmenuRegistered[sliderCtrl] then --#2026_08
+			sliderCtrlsContextmenuRegistered[sliderCtrl] = true
+			labelCtrl:SetHandler("OnMouseUp", function(p_sliderCtrl, button, upInside, ctrl, alt, shift)
+				if not upInside then return end
+				if button == MOUSE_BUTTON_INDEX_RIGHT then
+					showSliderContextMenu(p_sliderCtrl)
+				end
+			end)
+			sliderValueLabel:SetHandler("OnMouseUp", function(p_sliderCtrl, button, upInside, ctrl, alt, shift)
+				if not upInside then return end
+				if button == MOUSE_BUTTON_INDEX_RIGHT then
+					showSliderContextMenu(p_sliderCtrl)
+				end
+			end)
+		end
+
+
 		--Left click/right click contextMenu
 		local function onSliderMouseUp(p_sliderCtrl, button, upInside, ctrl, alt, shift)
-			if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
-				if contextMenuCallback == nil then return end
-				ZO_Tooltips_HideTextTooltip()
-				contextMenuCallback(p_sliderCtrl)
+			if not upInside then return end
+			if button == MOUSE_BUTTON_INDEX_RIGHT then
+				showSliderContextMenu(p_sliderCtrl)
 			elseif button == MOUSE_BUTTON_INDEX_LEFT then
 				sliderValueLabel:SetText((showSliderValueLabel == true and tos(p_sliderCtrl:GetValue())) or "")
-				if upInside then
-					sliderOnMouseEnter(p_sliderCtrl)
-				end
+				sliderOnMouseEnter(p_sliderCtrl)
 			end
 		end
 
@@ -2256,7 +2298,7 @@ do -- Row setup functions
 		end
 
 		--Slider & label Dimensions width/height etc.
-		-->Slightly delay this so the controls update properly before (e.g. row's width)
+		-->Slightly delay this to next frame so the controls update properly before (e.g. row's width)
 		zo_callLater(function()
 			reAnchorSliderControlsInRow(control)
 		end, 0) --#2025_40 delay to next frame to update row's width properly first

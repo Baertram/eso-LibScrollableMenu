@@ -743,6 +743,7 @@ d(debugPrefix .. "Context menu submenu 2 - Custom menu 2 Normal entry 1->RunCust
 					showValueLabel = 		true,
 					--valueLabelFont = 		"ZoFontWinH3",
 					hideValueTooltip = 		true,
+					--[[
 					contextMenuCallback = 	function(self)
 						d("--> ContextMenu at Slider")
 						ClearCustomScrollableMenu()
@@ -751,6 +752,7 @@ d(debugPrefix .. "Context menu submenu 2 - Custom menu 2 Normal entry 1->RunCust
 						AddCustomScrollableMenuSlider("Slider context", function() d("Changed slider at context") end, { min=1, max=5, step=0.5, width="85%", labelWidth="10%" }, nil)
 						ShowCustomScrollableMenu()
 					end
+					]]
 				}
 			},
 			{
@@ -787,6 +789,7 @@ d(debugPrefix .. "Context menu submenu 2 - Custom menu 2 Normal entry 1->RunCust
 					--textType = 			TEXT_TYPE_NUMERIC_UNSIGNED_INT,
 					font = 					"ZoFontChat",
 					--width = 				"100%",
+					--[[
 					contextMenuCallback = 	function(self)
 						d("--> ContextMenu at EditBox")
 						ClearCustomScrollableMenu()
@@ -794,6 +797,7 @@ d(debugPrefix .. "Context menu submenu 2 - Custom menu 2 Normal entry 1->RunCust
 						AddCustomScrollableMenuRadioButton("Radio button2 at context", function() d("clicked radio button2 at context") end, true, 1, nil)
 						ShowCustomScrollableMenu()
 					end
+					]]
 				}
 			},
 			{

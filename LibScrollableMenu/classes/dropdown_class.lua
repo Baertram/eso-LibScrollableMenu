@@ -107,7 +107,7 @@ local libUtil_BelongsToContextMenuCheck = libUtil.belongsToContextMenuCheck
 local libUtil_checkIfValidTexturePath   = libUtil.checkIfValidTexturePath
 
 local preventCustomScrollableContextMenuHide
-
+local clearCustomScrollableMenu
 
 --locals
 local isBoolean = {
@@ -2343,7 +2343,8 @@ function dropdownClass:ResetFilters(owningWindow)
 	if self.m_comboBox ~= nil then
 		if not self.m_comboBox.isContextMenu then --#2025_23 replaced by self.m_comboBox.isContextMenu -> self.m_comboBox.openingControl == nil then
 			--d(">>calling ClearCustomScrollableMenu")
-			ClearCustomScrollableMenu()
+			clearCustomScrollableMenu = clearCustomScrollableMenu or ClearCustomScrollableMenu
+			clearCustomScrollableMenu()
 		end
 	end
 
