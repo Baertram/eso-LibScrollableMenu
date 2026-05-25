@@ -144,7 +144,12 @@ end
 --		table headerCollapsedTitle				table or function returning a table of signature { text = "Click to search", color=ZO_ColorDef, font="FontNameHere", align=LEFT|CENTER(default)|RIGHT, offSetX=12, offSetY=-12 }: Title text shown as the header is collapsed (e.g. a text to show you can expand the section and see the search). Default value is nil.
 -->  === Dropdown text search & filter =================================================================================
 --		boolean enableFilter:optional			Boolean or function returning boolean which controls if the text search/filter editbox at the dropdown header is shown
---		function customFilterFunc				A function returning a boolean true: show item / false: hide item. Signature of function: customFilterFunc(item, filterString)
+--		function customFilterFunc				A function returning a boolean true: show item / false: hide item. Signature of function: customFilterFunc(item, filterString), see function defaultFilterFunc(p_item, p_filterString) in comboBox_base.lua
+-->  === Dropdown text sorting =================================================================================
+--		string customSortKey					String or function returning a string of the initial sortKey used to sort the table. sortKey must be within table customSortKeys or within default ZO_ComboBox sortKeys (which basically allows "name" only as you can see in table ZO_SORT_BY_NAME!)
+--		table customSortKeys					Table or function returning a table with the initial sortKeys availabe. See example table ZO_ComboBox's ZO_SORT_BY_NAME
+--		boolean customSortOrder					Boolean or function returning a boolean for the initial sort order. See example boolean ZO_ComboBox's ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
+--		function customSortFunc					A function sorting the table enties of the combobox, e.g. using ZO_TableOrderingFunction. Signature of function: customSortFunc(item1, item2, comboBox_Object), see function defaultSortFunc(item1, item2, comboBoxObject) in comboBox_base.lua
 --->  === Dropdown callback functions
 -- 		function preshowDropdownFn:optional 	function function(ctrl) codeHere end: to run before the dropdown shows
 --		boolean automaticRefresh:optional		Boolean or function returning boolean which controls if the automatic refresh of the normal scrolllist should happen, if you click/change any entry's value. This would be needed
