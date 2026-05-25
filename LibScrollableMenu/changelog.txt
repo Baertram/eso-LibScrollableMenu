@@ -1,8 +1,12 @@
+-v- ---------------LSM v2.43 - 2026-05-25--------------------------------------------------------------------------- -v-
+[Added]
+--#2026_09 Custom sorting default values (customSortKey, customSortKeys, customSortOrder -> All 3 applied once as the LSM is initialized), and a custom sort function customSortFunc (used each time at :UpdateItems() method call)
+
+
 -v- ---------------LSM v2.42 - 2026-04-30--------------------------------------------------------------------------- -v-
 [Fixed]
 --#2026_07 Pattern parsing error if search term in filter header editBox was using non-escaped special character like (
 --#2026_08 ContextMenu at a slider / editbox does not open if right clicked on the name label (or the label at the right side of the slider)
-
 
 -v- ---------------LSM v2.41 - 2026-02-23--------------------------------------------------------------------------- -v-
 [KNOWN PROBLEMS]

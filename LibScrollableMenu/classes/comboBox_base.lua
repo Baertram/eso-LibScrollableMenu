@@ -127,6 +127,17 @@ end
 
 
 --------------------------------------------------------------------
+--Sorting 												--#2026_09
+--------------------------------------------------------------------
+local defaultSortKey = "name"
+local defaultSortKeys = ZO_SORT_BY_NAME
+local defaultSortOrder = ZO_SORT_ORDER_UP
+local function defaultSortFunc(item1, item2, comboBoxObject)
+	return ZO_TableOrderingFunction(item1, item2, comboBoxObject.m_sortKey or defaultSortKey, comboBoxObject.m_sortType or defaultSortKeys, comboBoxObject.m_sortOrder or defaultSortOrder)
+end
+
+
+--------------------------------------------------------------------
 -- Local narration functions
 --------------------------------------------------------------------
 local function isAccessibilitySettingEnabled(settingId)
@@ -691,6 +702,7 @@ function comboBox_base:Initialize(parent, comboBoxContainer, options, depth, ini
 	lib._objects[#lib._objects + 1] = self
 
 	self:UpdateOptions(options, true, nil, initExistingComboBox)
+	self:SetSortData() --#2026_09
 
 --[[
 LSM_DebugComboBoxBase = {
@@ -1676,8 +1688,24 @@ function comboBox_base:ShouldHideDropdown()
 	return self:IsDropdownVisible() and not self:IsMouseOverControl()
 end
 
+function comboBox_base:SetSortData() --#2026_09 Called at Initialization, to set the default sorting values. The actual sortFunction is read at comboBox_base:UpdateItems() method (as sorting takes place)
+	local startSortKey, startSortOrder, startSortKeys, _ = self:GetSortData()
+	self.m_sortKey = startSortKey 		--custom entry, no vanilla code!
+	self.m_sortOrder = startSortOrder 	-- vanilla entry
+	self.m_sortType = startSortKeys   	-- vanilla entry
+end
+
 function comboBox_base:UpdateItems()
-	zo_comboBox_base_updateItems(self)
+	--zo_comboBox_base_updateItems(self) --#2026_09 260525 trying to support custom sortFunction and order from options of the LSM comboBox
+
+	if self.m_sortOrder and self.m_sortsItems then
+		local _, _, _, sortFunction = self:GetSortData() --#2026_09
+		table.sort(self.m_sortedItems, function(item1, item2) return sortFunction(item1, item2, self) end) --#2026_09
+	end
+
+	if self:IsDropdownVisible() then
+		self:ShowDropdown()
+	end
 end
 
 function comboBox_base:UpdateHeight(control)
@@ -2707,6 +2735,15 @@ function comboBox_base:GetFilterFunction()
 	local options = self:GetOptions()
 	local filterFunction = (options and options.customFilterFunc) or defaultFilterFunc
 	return filterFunction
+end
+
+function comboBox_base:GetSortData() --#2026_09
+	local options = self:GetOptions()
+	local sortKey = (options and options.customSortKey) or defaultSortKey
+	local sortOrder = (options and options.customSortOrder) or defaultSortOrder
+	local sortKeys = (options and options.customSortKeys) or defaultSortKeys
+	local sortFunction = (options and options.customSortFunc) or defaultSortFunc
+	return sortKey, sortOrder, sortKeys, sortFunction
 end
 
 
