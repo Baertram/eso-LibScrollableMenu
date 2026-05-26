@@ -1100,7 +1100,6 @@ do
 				--#2026_12 Check for customSortUp/DownButton data table and use that to anchor the control
 				local customSortButtonDataApplied = (isSortEnabled == true and comboBox:ApplyCustomSortButtonsData(headerControl, control)) or false
 				if not customSortButtonDataApplied then
-d("()using default sortContaienr size")
 					--Using default buttons size etc.
 					control:SetDimensions(18, "100%")
 				--else
