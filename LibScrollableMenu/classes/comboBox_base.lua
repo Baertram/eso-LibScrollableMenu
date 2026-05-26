@@ -1695,11 +1695,11 @@ end
 function comboBox_base:SetSortData() --#2026_09 Called at Initialization, to set the default sorting values. The actual sortFunction is read at comboBox_base:UpdateItems() method (as sorting takes place)
 	local startSortKey, startSortOrder, startSortKeys, _, isCustomSortEnabled = self:GetSortData()
 --d("[LSM]comboBox_base:SetSortData - sortsItems: " ..tos(self.m_sortsItems) .. ", isCustomSortEnabled: " .. tos(isCustomSortEnabled))
-	if isCustomSortEnabled then
+	if isCustomSortEnabled == true then
 		self.m_LSMsortKey = startSortKey 	-- custom LSM added entry, no vanilla code!
 		self.m_sortOrder = 	startSortOrder 	-- vanilla entry
 		self.m_sortType = 	startSortKeys   -- vanilla entry
-		self:SetSortsItems(true)
+		--self:SetSortsItems(true) Do not preset the sorting if custom sort is enabled, but let that be changed once the user clicked a sort button
 	else
 		self.m_LSMsortKey = nil
 	end
@@ -2895,17 +2895,17 @@ function comboBox_base:GetSortData() --#2026_09
 	if isCustomSortEnabled == true then
 		local options = self:GetOptions()
 
-		sortKey = (options and getValueOrCallback(options.customSortKey, options)) or nil
-		if sortKey == nil then
-			sortKey = defaultSortKey
-		end
-		sortOrder = (options and getValueOrCallback(options.customSortOrder, options)) or nil
+		sortOrder = (options and getValueOrCallback(options.sortOrder, options)) or nil --vanilla comboBox option
 		if sortOrder == nil then
 			sortOrder = defaultSortOrder
 		end
-		sortKeys = (options and getValueOrCallback(options.customSortKeys, options)) or nil
+		sortKeys = (options and getValueOrCallback(options.sortType, options)) or nil  --vanilla comboBox option
 		if sortKeys == nil then
 			sortKeys = defaultSortKeys
+		end
+		sortKey = (options and getValueOrCallback(options.customSortKey, options)) or nil
+		if sortKey == nil then
+			sortKey = defaultSortKey
 		end
 		sortFunction = (options and options.customSortFunc) or nil
 		if sortFunction == nil then

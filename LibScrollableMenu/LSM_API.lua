@@ -108,8 +108,9 @@ end
 --		number maxDropdownWidth:optional		Number or function returning number of total dropdown's maximum width
 --		number minDropdownWidth:optional		Number or function returning number of total dropdown's minimum width
 --		boolean sortEntries:optional			Boolean or function returning boolean if items in the main-/submenu should be sorted alphabetically. !!!Attention: Default is TRUE (sorting is enabled)!!!
---		table sortType:optional					table or function returning table for the sort type, e.g. ZO_SORT_BY_NAME, ZO_SORT_BY_NAME_NUMERIC
---		boolean sortOrder:optional				Boolean or function returning boolean for the sort order ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
+--		table sortType:optional					Table or function returning a table with the initial sortKeys availabe. See example table ZO_ComboBox's ZO_SORT_BY_NAME
+--		boolean sortOrder:optional				Boolean or function returning a boolean for the initial sort order. See example boolean ZO_ComboBox's ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
+
 -- 		string font:optional				 	String or function returning a string: font to use for the dropdown entries
 -- 		number spacing:optional		 			Number or function returning a number: Spacing between the entries
 --		boolean disableFadeGradient:optional	Boolean or function returning a boolean: for the fading of the top/bottom scrolled rows
@@ -146,10 +147,8 @@ end
 -->  === Dropdown text search & filter =================================================================================
 --		boolean enableFilter:optional			Boolean or function returning boolean which controls if the text search/filter editbox at the dropdown header is shown
 --		function customFilterFunc:optional		A function returning a boolean true: show item / false: hide item. Signature of function: customFilterFunc(item, filterString), see function defaultFilterFunc(p_item, p_filterString) in comboBox_base.lua
--->  === Dropdown text sorting =================================================================================
---		string customSortKey:optional			String or function returning a string of the initial sortKey used to sort the table. sortKey must be within table customSortKeys or within default ZO_ComboBox sortKeys (which basically allows "name" only as you can see in table ZO_SORT_BY_NAME!)
---		table customSortKeys:optional			Table or function returning a table with the initial sortKeys availabe. See example table ZO_ComboBox's ZO_SORT_BY_NAME
---		boolean customSortOrder:optional		Boolean or function returning a boolean for the initial sort order. See example boolean ZO_ComboBox's ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
+-->  === Dropdown text sorting (only if enableSort == true)  =================================================================================
+--		string customSortKey:optional			String or function returning a string of the initial sortKey used to sort the table. sortKey must be within table sortKeys or within default ZO_ComboBox sortKeys (which basically allows "name" only as you can see in table ZO_SORT_BY_NAME!)
 --		function customSortFunc:optional		A function sorting the table enties of the combobox, e.g. using ZO_TableOrderingFunction. Signature of function: customSortFunc(item1, item2, comboBox_Object), see function defaultSortFunc(item1, item2, comboBoxObject) in comboBox_base.lua
 --		table customSortUpButton:optional 		A table of function returning a table to define the sortUp button's look and position. Table uses this signature { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { nilable:string over = "", nilable:string normal = "", nilable:string pressed = "", nilable:string disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }
 --		table customSortDownButton:optional 	A table of function returning a table to define the sortDown button's look and position. Table uses this signature { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { nilable:string over = "", nilable:string normal = "", nilable:string pressed = "", nilable:string disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }

@@ -2400,6 +2400,7 @@ function dropdownClass:Sort(owningWindow, sortUp)  --#2026_10
 		--Call the sort function of the opened dropdown's comboBox now -> Via UpdateItems function, with parameter enableSort = true
 		if sortUp == nil then sortUp = true end
 		comboBox.m_sortOrder = (sortUp and ZO_SORT_ORDER_UP) or ZO_SORT_ORDER_DOWN
+		comboBox:SetSortsItems(true) --Enable sorting of the comboBox if not already enabled before
 		comboBox:UpdateItems(true)
 	end
 end
