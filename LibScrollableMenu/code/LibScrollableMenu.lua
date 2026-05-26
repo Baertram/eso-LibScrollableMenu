@@ -281,12 +281,11 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 
 
 ---------------------------------------------------------------
-	CHANGELOG Current version: 2.43 - Updated 2026-05-25
+	CHANGELOG Current version: 2.43 - Updated 2026-05-26
 ---------------------------------------------------------------
-Max error #: 2026_09
+Max error #: 2026_11
 
 [WORKING ON]
-
 
 
 [FEATURE]
@@ -298,7 +297,7 @@ Max error #: 2026_09
 --#2026_01 After a LSM contextMenu was shown and a checkbox was clicked (on the checkbox's label!), the next opened contextMenu's checkbox label
   is not changing the checkbox state (as if the first click is not accepted?), only the 2nd click does. (noticed during BMU LCM -> LSM changes at 2026-01-25)
 --#2026_03 Search header contextMenu for last searched does not work on BeamMeUp item filter header?
-
+--#2026_11 Opening a LibSets search UI dropdown e.g. at the DLCIDs and while having it opened left click the gear settings icon at the top tight setSearchUI just shows an empty settings contextMenu (as if ClearCustomScrollableMenu was called?)
 --======================================================================================================================
 
 
@@ -306,6 +305,7 @@ Max error #: 2026_09
 
 [Added]
 --#2026_09 Custom sorting default values (customSortKey, customSortKeys, customSortOrder -> All 3 applied once as the LSM is initialized), and a custom sort function customSortFunc (used each time at :UpdateItems() method call)
+--#2026_10 options.enableSort Show ^v sort header icons at the dropdown (collapsible) header -> Only if enableFilter == true and not working a contextMenus
 
 [Changed]
 

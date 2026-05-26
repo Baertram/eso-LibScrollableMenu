@@ -153,7 +153,7 @@ end
 -- Changed to force updating items and, to set anchor since anchoring was removed from :Show() due to separate anchoring based on comboBox type. (comboBox to self /submenu to row/contextMenu to mouse)
 function comboBoxClass:AddMenuItems()
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_VERBOSE, 127) end
-	self:UpdateItems()
+	self:UpdateItems() --> comboBox_base:UpdateItems()
 	self.m_dropdownObject:AnchorToComboBox(self)
 	self:Show()
 end
@@ -446,6 +446,7 @@ function comboBoxClass:UpdateResults(comingFromFilters)
 end
 
 function comboBoxClass:ShowDropdown()
+--d("[LSM]comboBoxClass:ShowDropdown")
 	-- Let the caller know that this is about to be shown...
 	if self.m_preshowDropdownFn then
 		self.m_preshowDropdownFn(self)
@@ -455,8 +456,51 @@ function comboBoxClass:ShowDropdown()
 		-- Update header only if hidden.
 		self:UpdateDropdownHeader()
 	end
-	self:ShowDropdownInternal()
+	self:ShowDropdownInternal() --> Usually calls ZO_ComboBox:ShowDropdownInternal()
 end
+
+function comboBoxClass:ShowDropdownInternal()
+--d("[LSM]comboBoxClass:ShowDropdownInternal - Register EVENT_GLOBAL_MOUSE_UP")
+	-- Just set the global mouse up handler here... we want the combo box to exhibit the same behvaior
+	-- as a context menu, which is dismissed when the user clicks outside the menu or on a menu item
+	-- (but not in the menu otherwise)
+	self.m_container:RegisterForEvent(EVENT_GLOBAL_MOUSE_UP, function(...) self:OnGlobalMouseUp(...) end)
+end
+
+
+function comboBoxClass:OnGlobalMouseUp(eventCode, button)
+--d("[LSM]comboBoxClass:OnGlobalMouseUp - visible: " ..tos(self:IsDropdownVisible()))
+	if self:IsDropdownVisible() then
+		if button == MOUSE_BUTTON_INDEX_LEFT and not self.m_dropdownObject:IsMouseOverControl() then
+--d(">1HideDropdown now")
+			self:HideDropdown()
+		end
+	else
+		if self.m_container:IsHidden() then
+--d(">2HideDropdown now")
+			self:HideDropdown()
+		else
+			-- If shown in ShowDropdownInternal, the global mouseup will fire and immediately dismiss the combo box. We need to
+			-- delay showing it until the first one fires.
+			self:ShowDropdownOnMouseUp()
+		end
+	end
+end
+
+function comboBoxClass:ShowDropdownOnMouseUp()
+--d("[LSM]comboBoxClass:ShowDropdownOnMouseUp - enabled: " ..tos(self:IsEnabled()))
+	if self:IsEnabled() then
+		self.m_dropdownObject:SetHidden(false)
+		self:AddMenuItems()
+
+		self:SetVisible(true)
+	else
+--d("<Unregister EVENT_GLOBAL_MOUSE_UP")
+		--If we get here, that means the dropdown was disabled after the request to show it was made, so just cancel showing entirely
+		self.m_container:UnregisterForEvent(EVENT_GLOBAL_MOUSE_UP)
+	end
+end
+
 
 function comboBoxClass:SetupDropdownHeader()
 	local dropdownControl = self.m_dropdownObject.control
@@ -593,3 +637,11 @@ d(">self.m_maxNumSelections: " .. tos(maxNumSelections))
     self.m_maxNumSelections = maxNumSelections
 end
 ]]
+
+function comboBoxClass:IsSortEnabled() --#2026_10
+	local options = self:GetOptions()
+	local enableFilter = (options and getValueOrCallback(options.enableFilter, options)) or false
+	local enableSort = (enableFilter == true and (options and getValueOrCallback(options.enableSort, options))) or false
+--d(debugPrefix .. "comboBoxClass:IsSortEnabled - enableFilter: " ..tos(enableFilter) .. "; enableSort: " ..tos(enableSort))
+	return enableSort
+end

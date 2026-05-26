@@ -140,6 +140,7 @@ local function test()
 			--titleText = function()  return "Custom title text" end,
 			--subtitleText = "Custom sub title",
 			enableFilter = function() return true end,
+			enableSort = function() return true end, --comboBoxClass:IsSortEnabled() --#2026_10
 			headerCollapsible = true,
 			--headerCollapsed = function() return false end,
 			headerToggleTooltip = function(state)

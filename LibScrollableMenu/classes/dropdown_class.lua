@@ -987,6 +987,7 @@ local headerControls = {
 	TOGGLE_BUTTON_CLICK_EXTENSION = 7, -- control that anchors to the toggle buttons left to make the whole header's width clickable to toggle the collapsed state
 	TOGGLE_ICON = 8, --the small icon shown at the toggle header (if options.headerIcon is used)
 	TOGGLE_TITLE = 9, --the title text shown at the toggle header (if options.headerTitle is used)
+	SORT_CONTAINER = 10, --the small 2 icon container left of the refresh button, showing the ^v sort icons --#2026_10
 }
 lib.XML.headerControls = headerControls --Needed for XML
 
@@ -1004,6 +1005,7 @@ do
 	local TOGGLE_BUTTON_CLICK_EXTENSION	= headerControls.TOGGLE_BUTTON_CLICK_EXTENSION
 	local TOGGLE_ICON 		= headerControls.TOGGLE_ICON --#2025_63
 	local TOGGLE_TITLE		= headerControls.TOGGLE_TITLE --#2025_63
+	local SORT_CONTAINER	= headerControls.SORT_CONTAINER --#2026_10
 
 	local DEFAULT_CONTROLID = CENTER_BASELINE
 
@@ -1036,14 +1038,16 @@ do
 	}
 	-- {point, relativeTo_controlId, relativePoint, offsetX, offsetY}
 	local anchors                      = {
+		[DEFAULT_ANCHOR]	= 				{ Anchor:New(TOPLEFT, nil, BOTTOMLEFT, 0, 0), Anchor:New(TOPRIGHT, nil, BOTTOMRIGHT, 0, 0) },
+		-----------------------------
 		[TOGGLE_BUTTON]		= 				{ Anchor:New(BOTTOMRIGHT, PARENT, BOTTOMRIGHT, -ROW_OFFSET_Y, 0) },
 		--Show a control left of the toggle button: We can click this to expand the header again, and after that the control resizes to 0pixels and hides
 		--20251211 working [TOGGLE_BUTTON_CLICK_EXTENSION]	=	{ Anchor:New(BOTTOMRIGHT, TOGGLE_BUTTON, BOTTOMLEFT, 0, 0), Anchor:New(BOTTOMLEFT, PARENT, BOTTOMLEFT, -ROW_OFFSET_Y, 0) },
 		[TOGGLE_BUTTON_CLICK_EXTENSION]	=	{ Anchor:New(TOPLEFT, PARENT, TOPLEFT, 2, 2), Anchor:New(BOTTOMRIGHT, PARENT, BOTTOMRIGHT, -2, -2) }, --span the extension toggle button over the whole width and height of the header to make it easy to click
 		[DIVIDER_SIMPLE]	= 				{ Anchor:New(TOPLEFT, nil, BOTTOMLEFT, 0, ROW_OFFSET_Y), Anchor:New(TOPRIGHT, nil, BOTTOMRIGHT, 0, 0) }, -- ZO_GAMEPAD_CONTENT_TITLE_DIVIDER_PADDING_Y
-		[DEFAULT_ANCHOR]	= 				{ Anchor:New(TOPLEFT, nil, BOTTOMLEFT, 0, 0), Anchor:New(TOPRIGHT, nil, BOTTOMRIGHT, 0, 0) },
 		[TOGGLE_ICON]		= 				toggleHeaderCollapsedAnchors[CENTER], --#2025_63 Anchors are first set here as a base centered, and then dynamically applied from options again
 		[TOGGLE_TITLE]		=				toggleHeaderCollapsedAnchors[CENTER], --#2025_63 Anchors are first set here as a base centered, and then dynamically applied from options again
+		[SORT_CONTAINER]	= 				{ Anchor:New(TOPLEFT, PARENT, TOPLEFT, 0, 0) }, --#2026_10
 	}
 
 	local function getHeaderCollapsedAnchor(align, offsetX, offsetY)
@@ -1074,7 +1078,9 @@ do
 			header_applyAnchorToControl(headerControl, anchorSet[2], controlId, control)
 		end
 
-		g_currentBottomLeftHeader = controlId
+		if controlId ~= SORT_CONTAINER then --#2026_10
+			g_currentBottomLeftHeader = controlId
+		end
 
 		local height = control:GetHeight()
 
@@ -1084,7 +1090,17 @@ do
 			-- We want to keep height if collapsed, but not add height for the button if not collapsed.
 			-- It should stay bottom right with fixed height so the texture on the button does not stretch
 			height = collapsed and height or 0
-		--The control processed is the collapsed header's toggle button "click extension" (rectangle spanning the collapsed header for an easier click to toggle)
+		elseif controlId == SORT_CONTAINER then --#2026_10
+			height = 0 --no extra height needed as the height is defined by the surrounding controls already. The sortContainer only spans the asme height as the other controls do
+			if collapsed then
+				control:SetHidden(true)
+				control:ClearAnchors()
+				control:SetDimensions(0, 0)
+			else
+				control:SetHidden(false)
+				control:SetDimensions(18, "100%")
+			end
+			--The control processed is the collapsed header's toggle button "click extension" (rectangle spanning the collapsed header for an easier click to toggle)
 		elseif controlId == TOGGLE_BUTTON_CLICK_EXTENSION then
 			--Always fixed header height addition = 0 as the toggleButton already provided the extra height for the header
 			--and this click extension control only is placed on the left to make it easier to expand the header again
@@ -1111,8 +1127,8 @@ do
 		return false
 	end
 
-	local function header_updateAnchors(headerControl, refreshResults, collapsed, isFilterEnabled, showToggleHeaderControls, toggleHeaderControlData)
-		--d(debugPrefix .. "header_updateAnchors - collapsed: " ..tos(collapsed) .. "; isFilterEnabled: " ..tos(isFilterEnabled) .. ", showToggleHeaderControl: " .. tos(showToggleHeaderControl))
+	local function header_updateAnchors(headerControl, refreshResults, collapsed, isFilterEnabled, showToggleHeaderControls, toggleHeaderControlData, isSortEnabled)
+--d(debugPrefix .. "header_updateAnchors - collapsed: " ..tos(collapsed) .. "; isFilterEnabled: " ..tos(isFilterEnabled) .. ", showToggleHeaderControl: " .. tos(showToggleHeaderControls) .. ", isSortEnabled: " .. tos(isSortEnabled))
 		--local headerHeight = collapsed and 0 or 17
 		local headerHeight = 0
 		local controls = headerControl.controls
@@ -1129,7 +1145,6 @@ do
 					and g_currentBottomLeftHeader == DEFAULT_CONTROLID then
 				hidden = true
 			end
-
 			if not hidden then
 				if showHeaderDivider(controlId) then
 					-- Only show the divider if g_currentBottomLeftHeader is before DIVIDER_SIMPLE and controlId is after DIVIDER_SIMPLE
@@ -1137,7 +1152,7 @@ do
 				end
 
 				local anchorSet = anchors[controlId] or anchors[DEFAULT_ANCHOR]
-				--Special anchroing of the header icon texture?
+				--Special anchoring of the header icon texture?
 				if collapsed == true and showToggleHeaderControls == true and controlsAtCollapsedHeaderUsingSpecialAnchors[controlId] and toggleHeaderControlData[controlId] ~= nil then
 					local controlToggleHeaderData = toggleHeaderControlData[controlId]
 					local anchorAlign = getValueOrCallback(controlToggleHeaderData.align, controlToggleHeaderData) or nil
@@ -1339,8 +1354,11 @@ do
 		refreshResults[TOGGLE_ICON] = 					header_processData(controls[TOGGLE_ICON], showToggleHeaderIcon) --#2025_63
 		refreshResults[TOGGLE_TITLE] = 					header_processData(controls[TOGGLE_TITLE], showToggleHeaderTitle) --#2025_63
 
+		local isSortEnabled = comboBox:IsSortEnabled() --#2026_10
+		refreshResults[SORT_CONTAINER] = 				header_processData(controls[SORT_CONTAINER], isSortEnabled, collapsed) --#2026_10
+
 		headerControl:SetDimensionConstraints(MIN_WIDTH_WITHOUT_SEARCH_HEADER, 0)
-		header_updateAnchors(headerControl, refreshResults, collapsed, isFilterEnabled, showToggleHeaderControls, toggleHeaderData) --#2025_63
+		header_updateAnchors(headerControl, refreshResults, collapsed, isFilterEnabled, showToggleHeaderControls, toggleHeaderData, isSortEnabled) --#2025_63 --#2026_10
 	end
 	lib.Util.refreshDropdownHeader = refreshDropdownHeader
 end
@@ -2357,6 +2375,33 @@ function dropdownClass:IsFilterEnabled()
 --d(debugPrefix .. "dropdownClass:IsFilterEnabled")
 	if self.m_comboBox then
 		return self.m_comboBox:IsFilterEnabled()
+	end
+end
+
+
+function dropdownClass:Sort(owningWindow, sortUp)  --#2026_10
+--d(debugPrefix .. "dropdownClass:Sort - sortUp: " ..tos(sortUp))
+	ZO_Tooltips_HideTextTooltip()
+
+	-->Close any opened contextmenu
+	local comboBox = self.m_comboBox
+	if comboBox ~= nil then
+		if not comboBox.isContextMenu then --#2025_23 replaced by self.m_comboBox.isContextMenu -> self.m_comboBox.openingControl == nil then
+			--d(">>calling ClearCustomScrollableMenu")
+			clearCustomScrollableMenu = clearCustomScrollableMenu or ClearCustomScrollableMenu
+			clearCustomScrollableMenu()
+		end
+		--Call the sort function of the opened dropdown's comboBox now -> Via UpdateItems function, with parameter enableSort = true
+		if sortUp == nil then sortUp = true end
+		comboBox.m_sortOrder = (sortUp and ZO_SORT_ORDER_UP) or ZO_SORT_ORDER_DOWN
+		comboBox:UpdateItems(true)
+	end
+end
+
+function dropdownClass:IsSortEnabled() --#2026_10
+--d(debugPrefix .. "dropdownClass:IsSortEnabled")
+	if self.m_comboBox then
+		return self.m_comboBox:IsSortEnabled()
 	end
 end
 

@@ -104,28 +104,28 @@ end
 --> === Dropdown general customization =================================================================================
 --		number visibleRowsDropdown:optional		Number or function returning number of shown entries at 1 page of the scrollable comboBox's opened dropdown
 --		number visibleRowsSubmenu:optional		Number or function returning number of shown entries at 1 page of the scrollable comboBox's opened submenus
---		number maxDropdownHeight				Number or function returning number of total dropdown's maximum height
---		number maxDropdownWidth					Number or function returning number of total dropdown's maximum width
---		number minDropdownWidth					Number or function returning number of total dropdown's minimum width
+--		number maxDropdownHeight:optional		Number or function returning number of total dropdown's maximum height
+--		number maxDropdownWidth:optional		Number or function returning number of total dropdown's maximum width
+--		number minDropdownWidth:optional		Number or function returning number of total dropdown's minimum width
 --		boolean sortEntries:optional			Boolean or function returning boolean if items in the main-/submenu should be sorted alphabetically. !!!Attention: Default is TRUE (sorting is enabled)!!!
 --		table sortType:optional					table or function returning table for the sort type, e.g. ZO_SORT_BY_NAME, ZO_SORT_BY_NAME_NUMERIC
 --		boolean sortOrder:optional				Boolean or function returning boolean for the sort order ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
 -- 		string font:optional				 	String or function returning a string: font to use for the dropdown entries
--- 		number spacing:optional,	 			Number or function returning a number: Spacing between the entries
+-- 		number spacing:optional		 			Number or function returning a number: Spacing between the entries
 --		boolean disableFadeGradient:optional	Boolean or function returning a boolean: for the fading of the top/bottom scrolled rows
 --		string headerFont:optional				String or function returning a string: font to use for the header entries
 --		table headerColor:optional				table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for header entries
 --		table normalColor:optional				table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for all normal (enabled) entries
 --		table disabledColor:optional 			table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for all disabled entries
 --		table submenuArrowColor:optional		table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for the submenu opening arrow > texture
---		string submenuOpenToSide				String or function returning a string "left" or "right": Force the submenu to open at the left/right side. If not specififed the submenu opens at the side where there is enough space to show the whole menu (GUI root/screen size is respected)
---		boolean highlightContextMenuOpeningControl Boolean or function returning boolean if the openingControl of a context menu should be highlighted.
+--		string submenuOpenToSide:optional		String or function returning a string "left" or "right": Force the submenu to open at the left/right side. If not specififed the submenu opens at the side where there is enough space to show the whole menu (GUI root/screen size is respected)
+--		boolean highlightContextMenuOpeningControl:optional Boolean or function returning boolean if the openingControl of a context menu should be highlighted.
 --												If you set this to true you either also need to set data.m_highlightTemplate at the row and provide the XML template name for the highLight, e.g. "LibScrollableMenu_Highlight_Green".
 --												Or (if not at contextMenu options!!!) you can use the templateContextMenuOpeningControl at options.XMLRowHighlightTemplates[lib.scrollListRowTypes.LSM_ENTRY_TYPE_*] = { template = "ZO_SelectionHighlight" , templateContextMenuOpeningControl = "LibScrollableMenu_Highlight_Green" } to specify the XML highlight template for that entryType
 -->  ===Dropdown multiselection ========================================================================================
 --		boolean enableMultiSelect:optional		Boolean or function returning boolean if multiple items in the main-/submenu can be selected at the same time
 --		number maxNumSelections:optional		Number or function returning a number: Maximum number of selectable entries (at the same time)
---		string maxNumSelectionsErrorText		String or function returning a string: The text showing if maximum number of selectable items was reached. Default: GetString(SI_COMBO_BOX_MAX_SELECTIONS_REACHED_ALERT)
+--		string maxNumSelectionsErrorText:optional	String or function returning a string: The text showing if maximum number of selectable items was reached. Default: GetString(SI_COMBO_BOX_MAX_SELECTIONS_REACHED_ALERT)
 -- 		string multiSelectionTextFormatter:optional	String SI constant or function returning a string SI constant: The text showing how many items have been selected currently, with the multiselection enabled. Default: SI_COMBO_BOX_DEFAULT_MULTISELECTION_TEXT_FORMATTER
 -- 		string noSelectionText:optional			String or function returning a string: The text showing if no item is selected, with the multiselection enabled. Default: GetString(SI_COMBO_BOX_DEFAULT_NO_SELECTION_TEXT)
 --		table multiSelectSubmenuSelectedArrowColor:optional		table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for the submenu opening arrow > texture where multiselection is enabled and any (nested) submenu entry was selected
@@ -137,19 +137,20 @@ end
 --		string subtitleFont:optional			String or function returning a font string: Sub-Title text's font. Default: "ZoFontHeader2"
 --		number titleTextAlignment:optional		Number or function returning a number: The title's vertical alignment, e.g. TEXT_ALIGN_CENTER
 --		userdata customHeaderControl:optional	Userdata or function returning Userdata: A custom control thta should be shown above the dropdown entries
---		boolean headerCollapsible			 	Boolean or function returning boolean if the header control should show a collapse/expand button
---		boolean headerCollapsed			 		Boolean or function returning boolean if the header control should always be collapsed as the dropdown is opened. If this is false (default) the last state will be saved in LSM SavedVariables (per dropdown box name)
---		string headerToggleTooltip				String or function returning a string: Tooltip text for the collapse/expand buttons. Function signature function(state). Default: returns "Collapse"/"Expand" strings from vanilla ESOUI, depending on the current state
---		table headerCollapsedIcon				table or function returning a table of signature { iconTexture = "path/to/textureName.dds", iconTint=ZO_ColorDef, width=number, height=number, align=LEFT|CENTER(default)|RIGHT, offSetX=12, offSetY=-12 }: Icon shown as the header is collapsed (e.g. a magnifying glass to show you can expand it to get a search). Default value is nil. Height is capped at 32!
---		table headerCollapsedTitle				table or function returning a table of signature { text = "Click to search", color=ZO_ColorDef, font="FontNameHere", align=LEFT|CENTER(default)|RIGHT, offSetX=12, offSetY=-12 }: Title text shown as the header is collapsed (e.g. a text to show you can expand the section and see the search). Default value is nil.
+--		boolean headerCollapsible:optional	 	Boolean or function returning boolean if the header control should show a collapse/expand button
+--		boolean headerCollapsed:optional		Boolean or function returning boolean if the header control should always be collapsed as the dropdown is opened. If this is false (default) the last state will be saved in LSM SavedVariables (per dropdown box name)
+--		string headerToggleTooltip:optional		String or function returning a string: Tooltip text for the collapse/expand buttons. Function signature function(state). Default: returns "Collapse"/"Expand" strings from vanilla ESOUI, depending on the current state
+--		table headerCollapsedIcon:optional		table or function returning a table of signature { iconTexture = "path/to/textureName.dds", iconTint=ZO_ColorDef, width=number, height=number, align=LEFT|CENTER(default)|RIGHT, offSetX=12, offSetY=-12 }: Icon shown as the header is collapsed (e.g. a magnifying glass to show you can expand it to get a search). Default value is nil. Height is capped at 32!
+--		table headerCollapsedTitle:optional		table or function returning a table of signature { text = "Click to search", color=ZO_ColorDef, font="FontNameHere", align=LEFT|CENTER(default)|RIGHT, offSetX=12, offSetY=-12 }: Title text shown as the header is collapsed (e.g. a text to show you can expand the section and see the search). Default value is nil.
+--		boolean enableSort:optional				Boolean or function returning a boolean. If true the sort icons ^v are enabled at the (collapsible) header -> Only visible if enableFilter = true
 -->  === Dropdown text search & filter =================================================================================
 --		boolean enableFilter:optional			Boolean or function returning boolean which controls if the text search/filter editbox at the dropdown header is shown
---		function customFilterFunc				A function returning a boolean true: show item / false: hide item. Signature of function: customFilterFunc(item, filterString), see function defaultFilterFunc(p_item, p_filterString) in comboBox_base.lua
+--		function customFilterFunc:optional		A function returning a boolean true: show item / false: hide item. Signature of function: customFilterFunc(item, filterString), see function defaultFilterFunc(p_item, p_filterString) in comboBox_base.lua
 -->  === Dropdown text sorting =================================================================================
---		string customSortKey					String or function returning a string of the initial sortKey used to sort the table. sortKey must be within table customSortKeys or within default ZO_ComboBox sortKeys (which basically allows "name" only as you can see in table ZO_SORT_BY_NAME!)
---		table customSortKeys					Table or function returning a table with the initial sortKeys availabe. See example table ZO_ComboBox's ZO_SORT_BY_NAME
---		boolean customSortOrder					Boolean or function returning a boolean for the initial sort order. See example boolean ZO_ComboBox's ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
---		function customSortFunc					A function sorting the table enties of the combobox, e.g. using ZO_TableOrderingFunction. Signature of function: customSortFunc(item1, item2, comboBox_Object), see function defaultSortFunc(item1, item2, comboBoxObject) in comboBox_base.lua
+--		string customSortKey:optional			String or function returning a string of the initial sortKey used to sort the table. sortKey must be within table customSortKeys or within default ZO_ComboBox sortKeys (which basically allows "name" only as you can see in table ZO_SORT_BY_NAME!)
+--		table customSortKeys:optional			Table or function returning a table with the initial sortKeys availabe. See example table ZO_ComboBox's ZO_SORT_BY_NAME
+--		boolean customSortOrder:optional		Boolean or function returning a boolean for the initial sort order. See example boolean ZO_ComboBox's ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
+--		function customSortFunc:optional		A function sorting the table enties of the combobox, e.g. using ZO_TableOrderingFunction. Signature of function: customSortFunc(item1, item2, comboBox_Object), see function defaultSortFunc(item1, item2, comboBoxObject) in comboBox_base.lua
 --->  === Dropdown callback functions
 -- 		function preshowDropdownFn:optional 	function function(ctrl) codeHere end: to run before the dropdown shows
 --		boolean automaticRefresh:optional		Boolean or function returning boolean which controls if the automatic refresh of the normal scrolllist should happen, if you click/change any entry's value. This would be needed
@@ -157,7 +158,7 @@ end
 --		boolean automaticSubmenuRefresh:optional		Boolean or function returning boolean which controls if the automatic refresh of the submenu's scrolllist should happen, if you click/change any entry's value. This would be needed
 --												e.g. if you want the entry B to react on entry A's value (e.g. checkboxes -> enabled state). Default value is false
 --->  === Dropdown's Custom XML virtual row/entry templates ============================================================
---		boolean useDefaultHighlightForSubmenuWithCallback	Boolean or function returning a boolean if always the default ZO_ComboBox highlight XML template should be used for an entry having a submenu AND a callback function. If false the highlight 'LibScrollableMenu_Highlight_Green' will be used
+--		boolean useDefaultHighlightForSubmenuWithCallback:optional	Boolean or function returning a boolean if always the default ZO_ComboBox highlight XML template should be used for an entry having a submenu AND a callback function. If false the highlight 'LibScrollableMenu_Highlight_Green' will be used
 --		table XMLRowTemplates:optional			Table or function returning a table with key = row type of lib.scrollListRowTypes and the value = subtable having
 --												"template" String = XMLVirtualTemplateName,
 --												rowHeight number = ZO_COMBO_BOX_ENTRY_TEMPLATE_HEIGHT,

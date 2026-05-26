@@ -462,6 +462,7 @@
 							[headerControls.TOGGLE_BUTTON_CLICK_EXTENSION] 		= self:GetNamedChild("ToggleHeaderClickExtension"),
 							[headerControls.TOGGLE_ICON] 		= self:GetNamedChild("ToggleHeaderIcon"),
 							[headerControls.TOGGLE_TITLE] 		= self:GetNamedChild("ToggleHeaderTitle"),
+							[headerControls.SORT_CONTAINER] 	= self:GetNamedChild("SortContainer"), --#2026_10
 						}
 						self:GetParent().header = self
 
@@ -516,6 +517,58 @@
 								</Texture>
 							</Controls>
 						</Control>
+
+						<Control name="$(parent)SortContainer" hidden="true"> <!-- #2026_10 -->
+							<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT" offsetX="0" offsetY="0" />
+							<Dimensions x="18" y="100%" />
+							<Controls>
+								<Button name="$(parent)SortUp" excludeFromResizeToFitExtents="true" inherits="ZO_ButtonBehaviorClickSound">
+									<Dimensions x="16" y="16" />
+									<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT" offsetX="2" offsetY="4" />
+
+									<Textures
+											normal="esoui/art/buttons/scrollbox_uparrow_up.dds"
+											pressed="esoui/art/buttons/scrollbox_uparrow_down.dds"
+											mouseOver="esoui/art/buttons/scrollbox_uparrow_over.dds"
+									/>
+
+									<OnMouseEnter>
+										LibScrollableMenu.XML.OnXMLControlEventHandler("ShowTextTooltip", self, self, BOTTOM, GetString(SI_GAMEPAD_SORT_OPTION) .. " " .. GetString(SI_GAMEPAD_BANK_SORT_ORDER_UP_TEXT), nil)
+									</OnMouseEnter>
+
+									<OnMouseExit>
+										ZO_Tooltips_HideTextTooltip()
+									</OnMouseExit>
+
+									<OnClicked>
+										LibScrollableMenu.XML.OnXMLControlEventHandler("Sort", self, self:GetOwningWindow(), true)
+									</OnClicked>
+								</Button>
+								<Button name="$(parent)SortDown" excludeFromResizeToFitExtents="true" inherits="ZO_ButtonBehaviorClickSound">
+									<Dimensions x="16" y="16" />
+									<Anchor point="BOTTOMLEFT" relativeTo="$(parent)" relativePoint="BOTTOMLEFT" offsetX="2" offsetY="-4" />
+
+									<Textures
+											normal="esoui/art/buttons/scrollbox_downarrow_up.dds"
+											pressed="esoui/art/buttons/scrollbox_downarrow_down.dds"
+											mouseOver="esoui/art/buttons/scrollbox_downarrow_over.dds"
+									/>
+
+									<OnMouseEnter>
+										LibScrollableMenu.XML.OnXMLControlEventHandler("ShowTextTooltip", self, self, BOTTOM, GetString(SI_GAMEPAD_SORT_OPTION) .. " " .. GetString(SI_GAMEPAD_BANK_SORT_ORDER_DOWN_TEXT), nil)
+									</OnMouseEnter>
+
+									<OnMouseExit>
+										ZO_Tooltips_HideTextTooltip()
+									</OnMouseExit>
+
+									<OnClicked>
+										LibScrollableMenu.XML.OnXMLControlEventHandler("Sort", self, self:GetOwningWindow(), false)
+									</OnClicked>
+								</Button>
+							</Controls>
+						</Control>
+
 
 						<Control name="$(parent)FilterContainer" hidden="true">
 							<Dimensions y="37"/>

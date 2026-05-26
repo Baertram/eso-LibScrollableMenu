@@ -133,7 +133,10 @@ local defaultSortKey = "name"
 local defaultSortKeys = ZO_SORT_BY_NAME
 local defaultSortOrder = ZO_SORT_ORDER_UP
 local function defaultSortFunc(item1, item2, comboBoxObject)
-	return ZO_TableOrderingFunction(item1, item2, comboBoxObject.m_sortKey or defaultSortKey, comboBoxObject.m_sortType or defaultSortKeys, comboBoxObject.m_sortOrder or defaultSortOrder)
+	--d(">defaultSortFunc item1: " .. tos(item1.label or item1.name) .. ", item2: " .. tos(item2.label or item2.name))
+	local sortOrder = comboBoxObject.m_sortOrder
+	if sortOrder == nil then sortOrder = defaultSortOrder end
+	return ZO_TableOrderingFunction(item1, item2, comboBoxObject.m_LSMsortKey or defaultSortKey, comboBoxObject.m_sortType or defaultSortKeys, sortOrder)
 end
 
 
@@ -1595,6 +1598,7 @@ if comboBox_base.IsEnabled == nil then
 end
 ]]
 
+--Called from submenu or contextMenu
 function comboBox_base:RefreshSortedItems(parentControl)
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_VERBOSE, 101, tos(getControlName(parentControl))) end
 	ZO_ClearNumericallyIndexedTable(self.m_sortedItems)
@@ -1689,22 +1693,41 @@ function comboBox_base:ShouldHideDropdown()
 end
 
 function comboBox_base:SetSortData() --#2026_09 Called at Initialization, to set the default sorting values. The actual sortFunction is read at comboBox_base:UpdateItems() method (as sorting takes place)
-	local startSortKey, startSortOrder, startSortKeys, _ = self:GetSortData()
-	self.m_sortKey = startSortKey 		--custom entry, no vanilla code!
-	self.m_sortOrder = startSortOrder 	-- vanilla entry
-	self.m_sortType = startSortKeys   	-- vanilla entry
+	local startSortKey, startSortOrder, startSortKeys, _, isCustomSortEnabled = self:GetSortData()
+--d("[LSM]comboBox_base:SetSortData - sortsItems: " ..tos(self.m_sortsItems) .. ", isCustomSortEnabled: " .. tos(isCustomSortEnabled))
+	if isCustomSortEnabled then
+		self.m_LSMsortKey = startSortKey 	--custom LSM added entry, no vanilla code!
+		self.m_sortOrder = 	startSortOrder 	-- vanilla entry
+		self.m_sortType = 	startSortKeys   -- vanilla entry
+		self:SetSortsItems(true)
+	end
 end
 
-function comboBox_base:UpdateItems()
+--Called from comboBoxClass:AddMenuItems() or submenu/contextMenu's comboBox_base:RefreshSortedItems
+function comboBox_base:UpdateItems(sortUpdate)
+--d("[LSM]comboBox_base:UpdateItems() - sortUpdate: " ..tos(sortUpdate) .. ", sortOrder: " .. tos(self.m_sortOrder))
 	--zo_comboBox_base_updateItems(self) --#2026_09 260525 trying to support custom sortFunction and order from options of the LSM comboBox
 
-	if self.m_sortOrder and self.m_sortsItems then
+	--Enable the sort of the combobox now, as we are coming from "sort up/down" buttons at the (collapsible) filterHeader
+	if sortUpdate == true and not self.m_sortsItems then --#2026_10
+		self:SetSortsItems(true)
+	end
+
+	if self.m_sortOrder ~= nil and self.m_sortsItems then --#2026_09 added ~= nil check to support negative sortOrder (DESC sorting)
+--d(">sorting is enabled, sortKey: " ..tos(self.m_LSMsortKey or defaultSortKey) .. ", sortOrder: " .. tos(self.m_sortOrder))
+		local selfVar = self
 		local _, _, _, sortFunction = self:GetSortData() --#2026_09
-		table.sort(self.m_sortedItems, function(item1, item2) return sortFunction(item1, item2, self) end) --#2026_09
+		table.sort(self.m_sortedItems, function(item1, item2) return sortFunction(item1, item2, selfVar) end) --#2026_09
 	end
 
 	if self:IsDropdownVisible() then
-		self:ShowDropdown()
+		--#2026_10 self:ShowDropdown() does not work as it seems as ShowDropdownOnMouseUp (via the global mouse up event) is never called! Directly calling ShowDropdownOnMouseUp() to update the sorting
+		if sortUpdate then --#2026_10
+--d(">>Showing the dropdown now, to update the sort of entries")
+			self:ShowDropdownOnMouseUp()
+		else
+			self:ShowDropdown()
+		end
 	end
 end
 
@@ -2739,11 +2762,32 @@ end
 
 function comboBox_base:GetSortData() --#2026_09
 	local options = self:GetOptions()
-	local sortKey = (options and options.customSortKey) or defaultSortKey
-	local sortOrder = (options and options.customSortOrder) or defaultSortOrder
-	local sortKeys = (options and options.customSortKeys) or defaultSortKeys
-	local sortFunction = (options and options.customSortFunc) or defaultSortFunc
-	return sortKey, sortOrder, sortKeys, sortFunction
+	local isCustomSortEnabled = false
+	local sortKey = (options and options.customSortKey)
+	if sortKey == nil then
+		sortKey = defaultSortKey
+	else
+		isCustomSortEnabled = true
+	end
+	local sortOrder = (options and options.customSortOrder)
+	if sortOrder == nil then
+		sortOrder = defaultSortOrder
+	else
+		isCustomSortEnabled = true
+	end
+	local sortKeys = (options and options.customSortKeys)
+	if sortKeys == nil then
+		sortKeys = defaultSortKeys
+	else
+		isCustomSortEnabled = true
+	end
+	local sortFunction = (options and options.customSortFunc)
+	if sortFunction == nil then
+		sortFunction = defaultSortFunc
+	else
+		isCustomSortEnabled = true
+	end
+	return sortKey, sortOrder, sortKeys, sortFunction, isCustomSortEnabled
 end
 
 
@@ -2755,6 +2799,10 @@ function comboBox_base:GetMaxRows()
 end
 
 function comboBox_base:IsFilterEnabled()
+	-- Overwrite at subclasses
+end
+
+function comboBox_base:IsSortEnabled()
 	-- Overwrite at subclasses
 end
 
