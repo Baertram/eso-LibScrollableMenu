@@ -1068,7 +1068,7 @@ do
 		anchorData.anchor:AddToControl(control)
 	end
 
-	local function header_applyAnchorSetToControl(headerControl, anchorSet, controlId, collapsed)
+	local function header_applyAnchorSetToControl(comboBox, headerControl, anchorSet, controlId, collapsed, isSortEnabled)
 		local controls = headerControl.controls
 		local control = controls[controlId]
 		control:SetHidden(false)
@@ -1097,8 +1097,16 @@ do
 				control:ClearAnchors()
 				control:SetDimensions(0, 0)
 			else
+				--#2026_12 Check for customSortUp/DownButton data table and use that to anchor the control
+				local customSortButtonDataApplied = (isSortEnabled == true and comboBox:ApplyCustomSortButtonsData(headerControl, control)) or false
+				if not customSortButtonDataApplied then
+d("()using default sortContaienr size")
+					--Using default buttons size etc.
+					control:SetDimensions(18, "100%")
+				--else
+					--Using custom button anchoring and/or look-a-like
+				end
 				control:SetHidden(false)
-				control:SetDimensions(18, "100%")
 			end
 			--The control processed is the collapsed header's toggle button "click extension" (rectangle spanning the collapsed header for an easier click to toggle)
 		elseif controlId == TOGGLE_BUTTON_CLICK_EXTENSION then
@@ -1127,7 +1135,7 @@ do
 		return false
 	end
 
-	local function header_updateAnchors(headerControl, refreshResults, collapsed, isFilterEnabled, showToggleHeaderControls, toggleHeaderControlData, isSortEnabled)
+	local function header_updateAnchors(comboBox, headerControl, refreshResults, collapsed, isFilterEnabled, showToggleHeaderControls, toggleHeaderControlData, isSortEnabled)
 --d(debugPrefix .. "header_updateAnchors - collapsed: " ..tos(collapsed) .. "; isFilterEnabled: " ..tos(isFilterEnabled) .. ", showToggleHeaderControl: " .. tos(showToggleHeaderControls) .. ", isSortEnabled: " .. tos(isSortEnabled))
 		--local headerHeight = collapsed and 0 or 17
 		local headerHeight = 0
@@ -1148,7 +1156,7 @@ do
 			if not hidden then
 				if showHeaderDivider(controlId) then
 					-- Only show the divider if g_currentBottomLeftHeader is before DIVIDER_SIMPLE and controlId is after DIVIDER_SIMPLE
-					headerHeight = headerHeight + header_applyAnchorSetToControl(headerControl, anchors[DIVIDER_SIMPLE], DIVIDER_SIMPLE)
+					headerHeight = headerHeight + header_applyAnchorSetToControl(comboBox, headerControl, anchors[DIVIDER_SIMPLE], DIVIDER_SIMPLE, nil, nil)
 				end
 
 				local anchorSet = anchors[controlId] or anchors[DEFAULT_ANCHOR]
@@ -1160,8 +1168,7 @@ do
 						anchorSet = getHeaderCollapsedAnchor(anchorAlign, getValueOrCallback(controlToggleHeaderData.offsetX, controlToggleHeaderData), getValueOrCallback(controlToggleHeaderData.offsetY, controlToggleHeaderData))
 					end
 				end
-				headerHeight = headerHeight + header_applyAnchorSetToControl(headerControl, anchorSet, controlId, collapsed)
-
+				headerHeight = headerHeight + header_applyAnchorSetToControl(comboBox, headerControl, anchorSet, controlId, collapsed, isSortEnabled)
 			end
 		end
 
@@ -1358,7 +1365,7 @@ do
 		refreshResults[SORT_CONTAINER] = 				header_processData(controls[SORT_CONTAINER], isSortEnabled, collapsed) --#2026_10
 
 		headerControl:SetDimensionConstraints(MIN_WIDTH_WITHOUT_SEARCH_HEADER, 0)
-		header_updateAnchors(headerControl, refreshResults, collapsed, isFilterEnabled, showToggleHeaderControls, toggleHeaderData, isSortEnabled) --#2025_63 --#2026_10
+		header_updateAnchors(comboBox, headerControl, refreshResults, collapsed, isFilterEnabled, showToggleHeaderControls, toggleHeaderData, isSortEnabled) --#2025_63 --#2026_10
 	end
 	lib.Util.refreshDropdownHeader = refreshDropdownHeader
 end
@@ -2400,10 +2407,20 @@ end
 
 function dropdownClass:IsSortEnabled() --#2026_10
 --d(debugPrefix .. "dropdownClass:IsSortEnabled")
-	if self.m_comboBox then
-		return self.m_comboBox:IsSortEnabled()
+	local comboBox = self.m_comboBox
+	if comboBox then
+		return comboBox:IsSortEnabled()
 	end
 end
+
+function dropdownClass:ApplyCustomSortButtonsData() --#2026_12
+	d(debugPrefix .. "dropdownClass:ApplyCustomSortButtonsData")
+	local comboBox = self.m_comboBox
+	if comboBox then
+		return comboBox:ApplyCustomSortButtonsData()
+	end
+end
+
 
 --[[ Used via XML button to I (include) submenu entries. Currently disabled, only available via text search prefix "/"
 function dropdownClass:SetFilterIgnore(ignore)

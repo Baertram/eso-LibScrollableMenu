@@ -1696,12 +1696,134 @@ function comboBox_base:SetSortData() --#2026_09 Called at Initialization, to set
 	local startSortKey, startSortOrder, startSortKeys, _, isCustomSortEnabled = self:GetSortData()
 --d("[LSM]comboBox_base:SetSortData - sortsItems: " ..tos(self.m_sortsItems) .. ", isCustomSortEnabled: " .. tos(isCustomSortEnabled))
 	if isCustomSortEnabled then
-		self.m_LSMsortKey = startSortKey 	--custom LSM added entry, no vanilla code!
+		self.m_LSMsortKey = startSortKey 	-- custom LSM added entry, no vanilla code!
 		self.m_sortOrder = 	startSortOrder 	-- vanilla entry
 		self.m_sortType = 	startSortKeys   -- vanilla entry
 		self:SetSortsItems(true)
+	else
+		self.m_LSMsortKey = nil
 	end
 end
+
+function comboBox_base:GetCustomSortButtonData() --#2026_12 Called from the (collapsible) filterHeader build routines via dropdown_class:ApplyCustomSortButtonsData()
+--d(debugPrefix.."comboBox_base:GetCustomSortButtonData")
+	self.m_LSMsortButtonData = nil
+	--Custom sort button look-a-like table provided? options.customSortUpButton and/or options.customSortDownButton
+	local _, _, _, _, isCustomSortEnabled, customSortButtonsData = self:GetSortData()
+	if not isCustomSortEnabled then
+		return
+	end
+
+	if not ZO_IsTableEmpty(customSortButtonsData) then
+		if not ZO_IsTableEmpty(customSortButtonsData["up"]) or not ZO_IsTableEmpty(customSortButtonsData["down"]) then
+			self.m_LSMsortButtonData = customSortButtonsData --will be used in dropdown_class.lua -> as the header is build/updated -> See method -> combobox_base:ApplyCustomSortButtonsData()
+		end
+	end
+end
+
+function comboBox_base:ApplyCustomSortButtonData(buttonControl, buttonData, sortContainer, headerControl) --#2026_12 Single button update
+--d(debugPrefix .. "comboBox_base:ApplyCustomSortButtonData")
+	--[[
+		Table buttonData contains:
+        options.customSortUpButton = {
+            dimensions = { x = 24, y = 24 },
+            texture = { over = "/esoui/art/inventory/inventory_trait_ornate_icon.dds", normal = "EsoUI/Art/Inventory/inventory_trait_intricate_icon.dds", pressed = "EsoUI/Art/Inventory/inventory_trait_not_researched_icon.dds", disabled = "" },
+            anchor = { pointOnMe = LEFT, target = nil, pointOnTarget = LEFT, offsetX = 4, offsetY = 4 }
+        },
+        options.customSortDownButton = { ... },
+    ]]
+	local sortButtonWasUpdated = false
+	local buttonTextures = getValueOrCallback(buttonData.texture, buttonData)
+	if not ZO_IsTableEmpty(buttonTextures) then
+		local buttonTextureNormal = getValueOrCallback(buttonTextures.normal, buttonTextures) or nil
+		if buttonTextureNormal and buttonTextureNormal ~= "" then
+			buttonControl:SetNormalTexture(buttonTextureNormal)
+			sortButtonWasUpdated = true
+		end
+		local buttonTexturePressed = getValueOrCallback(buttonTextures.pressed, buttonTextures) or nil
+		if buttonTexturePressed and buttonTextureNormal ~= "" then
+			buttonControl:SetPressedTexture(buttonTexturePressed)
+			sortButtonWasUpdated = true
+		end
+		local buttonTextureOver = getValueOrCallback(buttonTextures.over, buttonTextures) or nil
+		if buttonTextureOver and buttonTextureOver ~= "" then
+			buttonControl:SetMouseOverTexture(buttonTextureOver)
+			sortButtonWasUpdated = true
+		end
+		local buttonTextureDisabled = getValueOrCallback(buttonTextures.disabled, buttonTextures) or nil
+		if buttonTextureDisabled and buttonTextureDisabled ~= "" then
+			buttonControl:SetDisabledTexture(buttonTextureDisabled)
+			sortButtonWasUpdated = true
+		end
+	end
+
+	local buttonDimensions = getValueOrCallback(buttonData.dimensions, buttonData)
+	if not ZO_IsTableEmpty(buttonDimensions) then
+		if buttonDimensions.x then
+			local x = getValueOrCallback(buttonDimensions.x, buttonDimensions) or 0
+			buttonControl:SetWidth(x)
+			sortButtonWasUpdated = true
+		end
+		if buttonDimensions.y then
+			local y = getValueOrCallback(buttonDimensions.y, buttonDimensions) or 0
+			buttonControl:SetHeight(y)
+			sortButtonWasUpdated = true
+		end
+	end
+
+	local buttonAnchor = getValueOrCallback(buttonData.anchor, buttonData)
+	if not ZO_IsTableEmpty(buttonAnchor) then
+		local pointOnMe = getValueOrCallback(buttonAnchor.pointOnMe, buttonAnchor) or nil
+		local target = getValueOrCallback(buttonAnchor.target, buttonAnchor) or nil
+		local pointOnTarget = getValueOrCallback(buttonAnchor.pointOnTarget, buttonAnchor) or nil
+		local offsetX = getValueOrCallback(buttonAnchor.offsetX, buttonAnchor) or 0
+		local offsetY = getValueOrCallback(buttonAnchor.offsetY, buttonAnchor) or 0
+		if pointOnMe ~= nil and pointOnTarget ~= nil then
+			buttonControl:ClearAnchors()
+			buttonControl:SetAnchor(pointOnMe, target, pointOnTarget, offsetX, offsetY)
+			sortButtonWasUpdated = true
+		end
+	end
+
+	if sortButtonWasUpdated == true then
+	--At the end resize the sortContainer control to the buttons width, if it's not wide enough
+		local buttonWidth = buttonControl:GetWidth()
+		local sortContainerWidth = sortContainer:GetWidth()
+		if sortContainerWidth < buttonWidth then
+			sortContainer:SetDimensions(buttonWidth, "100%")
+		end
+	end
+	return sortButtonWasUpdated
+end
+
+function comboBox_base:ApplyCustomSortButtonsData(headerControl, control) --#2026_12 All sort buttons update
+--d(debugPrefix .. "comboBox_base:ApplyCustomSortButtonsData")
+	local wasAnyCustomSortButtonDataUsed = false
+
+	--Fill table self.m_comboBox.m_sortButtonData from options.customSortUpButton and/or options.customSortDownButton
+	self:GetCustomSortButtonData()
+
+	--Check if table was filled and apply the changes to the sort buttons now
+	local customSortButtonData = self.m_LSMsortButtonData
+	if ZO_IsTableEmpty(customSortButtonData) then return false end
+	local sortUpButtonData = customSortButtonData["up"]
+	if not ZO_IsTableEmpty(sortUpButtonData) then
+		local upButtonControl = control:GetNamedChild("SortUp")
+		if upButtonControl ~= nil then
+			wasAnyCustomSortButtonDataUsed = self:ApplyCustomSortButtonData(upButtonControl, sortUpButtonData, control, headerControl)
+		end
+	end
+	local sortDownButtonData = customSortButtonData["down"]
+	if not ZO_IsTableEmpty(sortDownButtonData) then
+		local downButtonControl = control:GetNamedChild("SortDown")
+		if downButtonControl ~= nil then
+			local wasCustomSortDownButtonDataUsed = self:ApplyCustomSortButtonData(downButtonControl, sortDownButtonData, control, headerControl)
+			wasAnyCustomSortButtonDataUsed = wasAnyCustomSortButtonDataUsed or wasCustomSortDownButtonDataUsed
+		end
+	end
+	return wasAnyCustomSortButtonDataUsed
+end
+
 
 --Called from comboBoxClass:AddMenuItems() or submenu/contextMenu's comboBox_base:RefreshSortedItems
 function comboBox_base:UpdateItems(sortUpdate)
@@ -2761,33 +2883,47 @@ function comboBox_base:GetFilterFunction()
 end
 
 function comboBox_base:GetSortData() --#2026_09
-	local options = self:GetOptions()
-	local isCustomSortEnabled = false
-	local sortKey = (options and options.customSortKey)
-	if sortKey == nil then
-		sortKey = defaultSortKey
-	else
-		isCustomSortEnabled = true
+	local isCustomSortEnabled = self:IsSortEnabled()
+	local sortKey, sortOrder, sortKeys, sortFunction, customSortButtonsData
+
+	--Preset with default values so that sort does not throw any errors
+	sortKey = 		defaultSortKey
+	sortOrder = 	defaultSortOrder
+	sortKeys = 		defaultSortKeys
+	sortFunction = 	defaultSortFunc
+
+	if isCustomSortEnabled == true then
+		local options = self:GetOptions()
+
+		sortKey = (options and getValueOrCallback(options.customSortKey, options)) or nil
+		if sortKey == nil then
+			sortKey = defaultSortKey
+		end
+		sortOrder = (options and getValueOrCallback(options.customSortOrder, options)) or nil
+		if sortOrder == nil then
+			sortOrder = defaultSortOrder
+		end
+		sortKeys = (options and getValueOrCallback(options.customSortKeys, options)) or nil
+		if sortKeys == nil then
+			sortKeys = defaultSortKeys
+		end
+		sortFunction = (options and options.customSortFunc) or nil
+		if sortFunction == nil then
+			sortFunction = defaultSortFunc
+		end
+
+		local customSortUpButtonData = (options and getValueOrCallback(options.customSortUpButton, options)) or nil --#2026_12
+		if not ZO_IsTableEmpty(customSortUpButtonData) then
+			customSortButtonsData = customSortButtonsData or {}
+			customSortButtonsData["up"] = customSortUpButtonData
+		end
+		local customSortDownButtonData = (options and getValueOrCallback(options.customSortDownButton, options)) or nil
+		if not ZO_IsTableEmpty(customSortDownButtonData) then
+			customSortButtonsData = customSortButtonsData or {}
+			customSortButtonsData["down"] = customSortDownButtonData
+		end
 	end
-	local sortOrder = (options and options.customSortOrder)
-	if sortOrder == nil then
-		sortOrder = defaultSortOrder
-	else
-		isCustomSortEnabled = true
-	end
-	local sortKeys = (options and options.customSortKeys)
-	if sortKeys == nil then
-		sortKeys = defaultSortKeys
-	else
-		isCustomSortEnabled = true
-	end
-	local sortFunction = (options and options.customSortFunc)
-	if sortFunction == nil then
-		sortFunction = defaultSortFunc
-	else
-		isCustomSortEnabled = true
-	end
-	return sortKey, sortOrder, sortKeys, sortFunction, isCustomSortEnabled
+	return sortKey, sortOrder, sortKeys, sortFunction, isCustomSortEnabled, customSortButtonsData
 end
 
 

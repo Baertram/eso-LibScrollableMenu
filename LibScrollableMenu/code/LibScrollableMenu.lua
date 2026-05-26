@@ -283,10 +283,10 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 ---------------------------------------------------------------
 	CHANGELOG Current version: 2.43 - Updated 2026-05-26
 ---------------------------------------------------------------
-Max error #: 2026_11
+Max error #: 2026_12
 
 [WORKING ON]
-
+--#2026_12 Adding nilable:table options.customSortDownButton = { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { up = "", normal = "", pressed = "", disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }, and options.customSortUpButton
 
 [FEATURE]
 
