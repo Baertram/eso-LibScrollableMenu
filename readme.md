@@ -4,7 +4,7 @@
 
 The purpose of this plugin is to allow for creation of custom scrollable menus.
 
-Originally developed in Kyoma's Titlizer.  Now used in ImprovedTitleizer.
+Originally developed in Kyoma's Titlizer.  Now used in ImprovedTitleizer, merTochbug, AdvancedFilters, AddonSelector, LibSets, FCOChangeStuff, and other addons...
 
 GitHub: https://github.com/tomstock1337/eso-LibScrollableMenu
 
