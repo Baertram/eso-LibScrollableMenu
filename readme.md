@@ -4,7 +4,7 @@
 
 The purpose of this plugin is to allow for creation of custom scrollable menus.
 
-Originally developed in Kyoma's Titlizer.  Now used in ImprovedTitleizer, merTochbug, AdvancedFilters, and other addons...
+Originally developed in Kyoma's Titlizer.  Now used in ImprovedTitleizer.
 
 GitHub: https://github.com/tomstock1337/eso-LibScrollableMenu
 
@@ -106,28 +106,29 @@ API syntax:
 --> === Dropdown general customization =================================================================================
 --		number visibleRowsDropdown:optional		Number or function returning number of shown entries at 1 page of the scrollable comboBox's opened dropdown
 --		number visibleRowsSubmenu:optional		Number or function returning number of shown entries at 1 page of the scrollable comboBox's opened submenus
---		number maxDropdownHeight				Number or function returning number of total dropdown's maximum height
---		number maxDropdownWidth					Number or function returning number of total dropdown's maximum width
---		number minDropdownWidth					Number or function returning number of total dropdown's minimum width
+--		number maxDropdownHeight:optional		Number or function returning number of total dropdown's maximum height
+--		number maxDropdownWidth:optional		Number or function returning number of total dropdown's maximum width
+--		number minDropdownWidth:optional		Number or function returning number of total dropdown's minimum width
 --		boolean sortEntries:optional			Boolean or function returning boolean if items in the main-/submenu should be sorted alphabetically. !!!Attention: Default is TRUE (sorting is enabled)!!!
---		table sortType:optional					table or function returning table for the sort type, e.g. ZO_SORT_BY_NAME, ZO_SORT_BY_NAME_NUMERIC
---		boolean sortOrder:optional				Boolean or function returning boolean for the sort order ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
+--		table sortType:optional					Table or function returning a table with the initial sortKeys availabe. See example table ZO_ComboBox's ZO_SORT_BY_NAME
+--		boolean sortOrder:optional				Boolean or function returning a boolean for the initial sort order. See example boolean ZO_ComboBox's ZO_SORT_ORDER_UP or ZO_SORT_ORDER_DOWN
+
 -- 		string font:optional				 	String or function returning a string: font to use for the dropdown entries
--- 		number spacing:optional,	 			Number or function returning a number: Spacing between the entries
+-- 		number spacing:optional		 			Number or function returning a number: Spacing between the entries
 --		boolean disableFadeGradient:optional	Boolean or function returning a boolean: for the fading of the top/bottom scrolled rows
 --		string headerFont:optional				String or function returning a string: font to use for the header entries
 --		table headerColor:optional				table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for header entries
 --		table normalColor:optional				table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for all normal (enabled) entries
 --		table disabledColor:optional 			table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for all disabled entries
 --		table submenuArrowColor:optional		table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for the submenu opening arrow > texture
---		string submenuOpenToSide				String or function returning a string "left" or "right": Force the submenu to open at the left/right side. If not specififed the submenu opens at the side where there is enough space to show the whole menu (GUI root/screen size is respected)
---		boolean highlightContextMenuOpeningControl Boolean or function returning boolean if the openingControl of a context menu should be highlighted.
+--		string submenuOpenToSide:optional		String or function returning a string "left" or "right": Force the submenu to open at the left/right side. If not specififed the submenu opens at the side where there is enough space to show the whole menu (GUI root/screen size is respected)
+--		boolean highlightContextMenuOpeningControl:optional Boolean or function returning boolean if the openingControl of a context menu should be highlighted.
 --												If you set this to true you either also need to set data.m_highlightTemplate at the row and provide the XML template name for the highLight, e.g. "LibScrollableMenu_Highlight_Green".
 --												Or (if not at contextMenu options!!!) you can use the templateContextMenuOpeningControl at options.XMLRowHighlightTemplates[lib.scrollListRowTypes.LSM_ENTRY_TYPE_*] = { template = "ZO_SelectionHighlight" , templateContextMenuOpeningControl = "LibScrollableMenu_Highlight_Green" } to specify the XML highlight template for that entryType
 -->  ===Dropdown multiselection ========================================================================================
 --		boolean enableMultiSelect:optional		Boolean or function returning boolean if multiple items in the main-/submenu can be selected at the same time
 --		number maxNumSelections:optional		Number or function returning a number: Maximum number of selectable entries (at the same time)
---		string maxNumSelectionsErrorText		String or function returning a string: The text showing if maximum number of selectable items was reached. Default: GetString(SI_COMBO_BOX_MAX_SELECTIONS_REACHED_ALERT)
+--		string maxNumSelectionsErrorText:optional	String or function returning a string: The text showing if maximum number of selectable items was reached. Default: GetString(SI_COMBO_BOX_MAX_SELECTIONS_REACHED_ALERT)
 -- 		string multiSelectionTextFormatter:optional	String SI constant or function returning a string SI constant: The text showing how many items have been selected currently, with the multiselection enabled. Default: SI_COMBO_BOX_DEFAULT_MULTISELECTION_TEXT_FORMATTER
 -- 		string noSelectionText:optional			String or function returning a string: The text showing if no item is selected, with the multiselection enabled. Default: GetString(SI_COMBO_BOX_DEFAULT_NO_SELECTION_TEXT)
 --		table multiSelectSubmenuSelectedArrowColor:optional		table (ZO_ColorDef) or function returning a color table with r, g, b, a keys and their values: for the submenu opening arrow > texture where multiselection is enabled and any (nested) submenu entry was selected
@@ -139,14 +140,28 @@ API syntax:
 --		string subtitleFont:optional			String or function returning a font string: Sub-Title text's font. Default: "ZoFontHeader2"
 --		number titleTextAlignment:optional		Number or function returning a number: The title's vertical alignment, e.g. TEXT_ALIGN_CENTER
 --		userdata customHeaderControl:optional	Userdata or function returning Userdata: A custom control thta should be shown above the dropdown entries
---		boolean headerCollapsible			 	Boolean or function returning boolean if the header control should show a collapse/expand button
+--		boolean headerCollapsible:optional	 	Boolean or function returning boolean if the header control should show a collapse/expand button
+--		boolean headerCollapsed:optional		Boolean or function returning boolean if the header control should always be collapsed as the dropdown is opened. If this is false (default) the last state will be saved in LSM SavedVariables (per dropdown box name)
+--		string headerToggleTooltip:optional		String or function returning a string: Tooltip text for the collapse/expand buttons. Function signature function(state). Default: returns "Collapse"/"Expand" strings from vanilla ESOUI, depending on the current state
+--		table headerCollapsedIcon:optional		table or function returning a table of signature { iconTexture = "path/to/textureName.dds", iconTint=ZO_ColorDef, width=number, height=number, align=LEFT|CENTER(default)|RIGHT, offSetX=12, offSetY=-12 }: Icon shown as the header is collapsed (e.g. a magnifying glass to show you can expand it to get a search). Default value is nil. Height is capped at 32!
+--		table headerCollapsedTitle:optional		table or function returning a table of signature { text = "Click to search", color=ZO_ColorDef, font="FontNameHere", align=LEFT|CENTER(default)|RIGHT, offSetX=12, offSetY=-12 }: Title text shown as the header is collapsed (e.g. a text to show you can expand the section and see the search). Default value is nil.
+--		boolean enableSort:optional				Boolean or function returning a boolean. If true the sort icons ^v are enabled at the (collapsible) header -> Only visible if enableFilter = true
 -->  === Dropdown text search & filter =================================================================================
 --		boolean enableFilter:optional			Boolean or function returning boolean which controls if the text search/filter editbox at the dropdown header is shown
---		function customFilterFunc				A function returning a boolean true: show item / false: hide item. Signature of function: customFilterFunc(item, filterString)
+--		function customFilterFunc:optional		A function returning a boolean true: show item / false: hide item. Signature of function: customFilterFunc(item, filterString), see function defaultFilterFunc(p_item, p_filterString) in comboBox_base.lua
+-->  === Dropdown text sorting (only if enableSort == true)  =================================================================================
+--		string customSortKey:optional			String or function returning a string of the initial sortKey used to sort the table. sortKey must be within table sortKeys or within default ZO_ComboBox sortKeys (which basically allows "name" only as you can see in table ZO_SORT_BY_NAME!)
+--		function customSortFunc:optional		A function sorting the table enties of the combobox, e.g. using ZO_TableOrderingFunction. Signature of function: customSortFunc(item1, item2, comboBox_Object), see function defaultSortFunc(item1, item2, comboBoxObject) in comboBox_base.lua
+--		table customSortUpButton:optional 		A table of function returning a table to define the sortUp button's look and position. Table uses this signature { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { nilable:string over = "", nilable:string normal = "", nilable:string pressed = "", nilable:string disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }
+--		table customSortDownButton:optional 	A table of function returning a table to define the sortDown button's look and position. Table uses this signature { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { nilable:string over = "", nilable:string normal = "", nilable:string pressed = "", nilable:string disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }
 --->  === Dropdown callback functions
 -- 		function preshowDropdownFn:optional 	function function(ctrl) codeHere end: to run before the dropdown shows
+--		boolean automaticRefresh:optional		Boolean or function returning boolean which controls if the automatic refresh of the normal scrolllist should happen, if you click/change any entry's value. This would be needed
+--												e.g. if you want the entry B to react on entry A's value (e.g. checkboxes -> enabled state). Default value is false
+--		boolean automaticSubmenuRefresh:optional		Boolean or function returning boolean which controls if the automatic refresh of the submenu's scrolllist should happen, if you click/change any entry's value. This would be needed
+--												e.g. if you want the entry B to react on entry A's value (e.g. checkboxes -> enabled state). Default value is false
 --->  === Dropdown's Custom XML virtual row/entry templates ============================================================
---		boolean useDefaultHighlightForSubmenuWithCallback	Boolean or function returning a boolean if always the default ZO_ComboBox highlight XML template should be used for an entry having a submenu AND a callback function. If false the highlight 'LibScrollableMenu_Highlight_Green' will be used
+--		boolean useDefaultHighlightForSubmenuWithCallback:optional	Boolean or function returning a boolean if always the default ZO_ComboBox highlight XML template should be used for an entry having a submenu AND a callback function. If false the highlight 'LibScrollableMenu_Highlight_Green' will be used
 --		table XMLRowTemplates:optional			Table or function returning a table with key = row type of lib.scrollListRowTypes and the value = subtable having
 --												"template" String = XMLVirtualTemplateName,
 --												rowHeight number = ZO_COMBO_BOX_ENTRY_TEMPLATE_HEIGHT,
@@ -212,6 +227,7 @@ LSM_ENTRY_TYPE_RADIOBUTTON
 LSM_ENTRY_TYPE_EDITBOX
 LSM_ENTRY_TYPE_SLIDER
 
+
 --Add a scrollable context (right click) menu at any control (not only a ZO_ComboBox), e.g. to any custom control of your
 --addon or even any entry of a LibScrollableMenu combobox dropdown
 --
@@ -219,7 +235,7 @@ LSM_ENTRY_TYPE_SLIDER
 --A new context menu should be using ClearCustomScrollableMenu() before it adds the first entries (to hide other contextmenus and clear the new one).
 --After that use either AddCustomScrollableMenuEntry to add single entries, AddCustomScrollableMenuEntries to add a whole entries table/function
 --returning a table, or even directly use AddCustomScrollableMenu and pass in the entrie/function to get entries.
---And after adding all entries, call ShowCustomScrollableMenu(parentControl) to show the menu at the parentControl. If no control is provided
+--And after adding all entries, call ShowCustomScrollableMenu(controlToAnchorTo, options, specialCallbackData) to show the menu at the parentControl. If no control is provided
 --moc() (control below mouse cursor) will be used
 -->Attention: ClearCustomScrollableMenu() will clear and hide ALL LSM contextmenus at any time! So we cannot have an LSM context menu to show at another
 --LSM context menu entry (similar to ZO_Menu).
@@ -269,7 +285,7 @@ LSM_ENTRY_TYPE_SLIDER
 --		->		}
 --		isNew = false, --  optional booelan or function returning a boolean Is this entry a new entry and thus shows the "New" icon?
 --		entries = { ... see above ... }, -- optional table containing nested submenu entries in this submenu -> This entry opens a new nested submenu then. Contents of entries use the same values as shown in this example here
---		contextMenuCallback = function(ctrl) ... end, -- optional function for a right click action, e.g. show a scrollable context menu at the menu entry
+--		contextMenuCallback = function(comboBox, control, data) ... end, -- optional function for a right click action, e.g. show a scrollable context menu at the menu entry
 -- }
 --}, --[[additionalData]]
 --	 	{ isNew = true, normalColor = ZO_ColorDef, highlightColor = ZO_ColorDef, disabledColor = ZO_ColorDef, highlightTemplate = "ZO_SelectionHighlight",
@@ -284,7 +300,7 @@ function AddCustomScrollableMenuEntry(text, callback, entryType, entries, additi
 --> See examples for the table "entries" values above AddCustomScrollableMenuEntry
 --Existing context menu entries will be kept (until ClearCustomScrollableMenu will be called)
 ---> returns nilable:number indexOfNewAddedEntry, nilable:table newEntryData
-function AddCustomScrollableSubMenuEntry(text, entries, callbackFunc)
+function AddCustomScrollableSubMenuEntry(text, entries, callbackFunc, additionalData) --#2026_04
 
 
 --Adds a divider line to the context menu entries
@@ -330,6 +346,15 @@ function AddCustomScrollableMenuEditBox(text, callback, editBoxData, additionalD
 function AddCustomScrollableMenuSlider(text, callback, sliderData, additionalData)
 
 
+--Set the options (visible rows max, etc.) for the scrollable context menu, or any passed in 2nd param comboBoxContainer
+-->See possible options above AddCustomScrollableComboBoxDropdownMenu
+function SetCustomScrollableMenuOptions(options, comboBoxContainer)
+
+
+--Hide the custom scrollable context menu and clear it's entries, clear internal variables, mouse clicks etc.
+function ClearCustomScrollableMenu()
+
+
 --Pass in a table/function returning a table with predefined context menu entries and let them all be added in order of the table's number key
 --Existing context menu entries will be kept (until ClearCustomScrollableMenu will be called)
 ---> returns boolean allWereAdded, nilable:table indicesOfNewAddedEntries, nilable:table newEntriesData
@@ -343,22 +368,39 @@ function AddCustomScrollableMenuEntries(contextMenuEntries)
 function AddCustomScrollableMenu(entries, options)
 
 
---Set the options (visible rows max, etc.) for the scrollable context menu, or any passed in 2nd param comboBoxContainer
--->See possible options above AddCustomScrollableComboBoxDropdownMenu
-function SetCustomScrollableMenuOptions(options, comboBoxContainer)
-
 
 --Show the custom scrollable context menu now at the control controlToAnchorTo, using optional options.
 --If controlToAnchorTo is nil it will be anchored to the current control's position below the mouse, like ZO_Menu does
+--Optional table specialCallbackData can be used to register an onShowCallback or onHideCallback function for your unqiue addon name,
+--so you can react on an "Show" and/or "Hide" of this particular context menu. Registered callback functions will be executed in order of register!
+--You can pass in any other variable with the same table. The whole table will passed to the callback function's signature, and to the uniqueAddonName generating function.
+-- The signature of the table must follow this example:
+--  { addonName = string or function returning a string "UniqueString", onShowCallback = function(comboBox, openingControl, specialData) end, onHideCallback = function(comboBox, openingControl, specialData) end, anyOtherVariableToPassInToTheCallback=anyValue, ... }
 --Existing context menu entries will be kept (until ClearCustomScrollableMenu will be called)
-function ShowCustomScrollableMenu(controlToAnchorTo, options)
+function ShowCustomScrollableMenu(controlToAnchorTo, options, specialCallbackData) 
 
 
---Hide the custom scrollable context menu and clear it's entries, clear internal variables, mouse clicks etc.
-function ClearCustomScrollableMenu()
+
+--API to refresh a dropdown's submenu or mainmenu or an entry control visually (e.g. if you click an entry, called from the callback function)
+-->Parameter updateMode can be left empty, then the system will automatically determine if a submenu exists and the item belongs to that, and refresh that,
+--or it will update the mainmenu if it exists.
+--Or you specify one of the following updateModes:
+--->LSM_UPDATE_MODE_MAINMENU	Only update the mainmenu visually
+--->LSM_UPDATE_MODE_SUBMENU		Only update the submenu visually
+--->LSM_UPDATE_MODE_BOTH		Update the submenu and the mainmenu, both
+---Parameter comboBox is optional
+function RefreshCustomScrollableMenu(mocCtrl, updateMode, comboBox)
 
 
---Run a callback function myAddonCallbackFunc passing in the entries of the opening menu/submneu of a clicked LSM context menu item
+--Returns boolean true/false if any LSM context menu is currently showing it's dropdown
+IsCustomScrollableContextMenuShown()
+
+
+--Returns boolean true/false if any LSM menu is currently showing it's dropdown
+IsCustomScrollableMenuShown()
+
+
+--Run a callback function myAddonCallbackFunc passing in the entries of the opening menu/submenu of a clicked LSM context menu item
 -->Parameters of your function myAddonCallbackFunc must be:
 -->function myAddonCallbackFunc(userdata LSM_comboBox, userdata selectedContextMenuItem, table openingMenusEntries, ...)
 -->... can be any additional params that your function needs, and must be passed in to the ... of calling API function RunCustomScrollableMenuItemsCallback too!
@@ -398,5 +440,42 @@ function GetCustomScrollableMenuRowData(rowControl)
 -- API to set all buttons in a group based on Select all, Unselect All, Invert all.
 -->Used in "checkbox" buttonGroup to show the default context menu (if no custom contextmenu was provided!) at a control which provides the
 -->"Select all", "Deselect all" and "Invert selection" entries
-function LibScrollableMenu.ButtonGroupDefaultContextMenu(comboBox, control, data)
+function LibScrollableMenu.ButtonGroupDefaultContextMenu
+
+
+Recursively check if any icon on the current submenu's path, up to the main menu (via the parentMenus), needs an update.
+--Manual call via API function UpdateCustomScrollableMenuEntryIconPath (e.g. from any callback of an entry) or automatic call if submenuEntry.updateIconPath == true
+UpdateCustomScrollableMenuEntryIconPath(comboBox, control, data)
+
+Recursively check if any entry on the current submenu's path, up to the main menu (via the parentMenus), needs an update.
+--Optional checkFunc must return a boolean true [default return value] (refresh now) or false (no refresh needed), and uses the signature:
+--> checkFunc(comboBox, control, data)
+--Manual call via API function UpdateCustomScrollableMenuEntryPath (e.g. from any callback of an entry) or automatic call if submenuEntry.updateEntryPath == true
+UpdateCustomScrollableMenuEntryPath(comboBox, control, data, checkFunc, checkFuncParam1, checkFuncParam2, ...)
+
+
+--API to keep the LSM opened even if a contextMenu is opened (via ZO_Menu e.g.)
+function PreventCustomScrollableContextMenuHide()
+
+--API to keep the LSM opened even if a contextMenu (at a ZO_Menu contextMenu showing above an LSM entry e.g.) entry was clicked
+--Mandatory parameter clickCount controls how many clicks it will stay open
+function PreventCustomScrollableContextMenuEntryClickHide(clickCount)
+```
+
+### Callbacks fired by the library where you can register via LibScrollableMenu:RegisterForCallback(callbackName, func) to
+```
+-callbackName-          -functionParameters-   -Description-
+'NewStatusUpdated'   control, data                The isNew status updated at an entry 
+'EntryOnMouseEnter'  control, data                The mouse was moved above an entry
+'EntryOnMouseExit'    control, data                The mouse was moved away from an entry
+'OnEntrySelected'       control, data                An entry was selected
+'OnMenuShow'           control, comboBoxObject A normal LSM menu is shown
+'OnMenuHide'             control, comboBoxObject A normal LSM menu is hidden
+'OnSubMenuShow'      control, comboBoxObject A submenu of a LSM menu is shown
+'OnSubMenuHide'         control, comboBoxObject A submenu of a LSM menu is hidden
+'OnContextMenuShow' control, comboBoxObject A context menu of LSM (standalone, or at another LSM [sub]menu) is shown
+'OnContextMenuHide'   control, comboBoxObject A context menu of LSM (standalone, or at another LSM [sub]menu) is hidden
+'RadioButtonUpdated'  control, data, checked    A radiobutton entry's checked state was updated
+'CheckboxUpdated'     control, data, checked    A checkbox entry's checked state was updated
+'OnDropdownMenuAdded' control, options     A LSM menu was added to an existing ZO_ComboBox dropdown (here you can exchange values at the options table prior to creating the LSM menu)
 ```
