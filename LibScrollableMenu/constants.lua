@@ -713,7 +713,7 @@ local LSMOptionsToZO_ComboBoxOptionsCallbacks = {
 		if updatedOptions.sortType ~= nil then return end
 
 		local sortType = getValueOrCallback(options.sortType, options) or comboBoxObject.m_sortType
-		comboBoxObject:SetSortOrder(sortType , sortOrder)
+		comboBoxObject:SetSortOrder(sortOrder, sortType) --#2026_12 Fix parameters
 	end,
 	["sortType"] = function(comboBoxObject, sortType)
 		local options = comboBoxObject.options
@@ -724,7 +724,7 @@ local LSMOptionsToZO_ComboBoxOptionsCallbacks = {
 
 		local sortOrder = getValueOrCallback(options.sortOrder, options)
 		if sortOrder == nil then sortOrder = comboBoxObject.m_sortOrder end
-		comboBoxObject:SetSortOrder(sortType , sortOrder )
+		comboBoxObject:SetSortOrder(sortOrder, sortType) --#2026_12 Fix parameters
 	end,
 	["spacing"] = function(comboBoxObject, spacing)
 		comboBoxObject:SetSpacing(spacing) --sets comboBoxObject.m_spacing

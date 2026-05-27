@@ -140,11 +140,18 @@ local function test()
 			--titleText = function()  return "Custom title text" end,
 			--subtitleText = "Custom sub title",
 			enableFilter = function() return true end,
-			--enableSort = function() return true end, --#2026_10
+			enableSort = function() return true end, --#2026_10
+			sortOrder = ZO_SORT_ORDER_DOWN,
+			sortType = ZO_SORT_BY_NAME,
+			sortEntries = true,
 			customSortUpButton = { 					   --#2026_12
-				dimensions = { x = 36, y = 36 },
-			    texture = { over = "/esoui/art/inventory/inventory_trait_ornate_icon.dds", normal = "EsoUI/Art/Inventory/inventory_trait_intricate_icon.dds", pressed = "EsoUI/Art/Inventory/inventory_trait_not_researched_icon.dds", disabled = "" },
-				anchor = { pointOnMe = TOPLEFT, target = nil, pointOnTarget = TOPLEFT, offsetX = 4, offsetY = 4 }
+				dimensions = { x = 16, y = 16 },
+			    texture = {
+					over = 		"/esoui/art/inventory/inventory_trait_ornate_icon.dds",
+					normal = 	"/esoui/art/inventory/inventory_trait_ornate_icon.dds",
+					pressed = 	"/esoui/art/inventory/inventory_trait_ornate_icon.dds",
+					disabled = 	"" },
+				anchor = { pointOnMe = TOPRIGHT, target = nil, pointOnTarget = TOPRIGHT, offsetX = -4, offsetY = 4 }
 			},
 			--customSortDownButton = { ... }, --#2026_12
 			headerCollapsible = true,

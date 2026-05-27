@@ -286,7 +286,6 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 Max error #: 2026_12
 
 [WORKING ON]
---#2026_12 Adding nilable:table options.customSortDownButton = { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { up = "", normal = "", pressed = "", disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }, and options.customSortUpButton
 
 [FEATURE]
 
@@ -304,8 +303,9 @@ Max error #: 2026_12
 [Fixed]
 
 [Added]
---#2026_09 Custom sorting default values (customSortKey, customSortKeys, customSortOrder -> All 3 applied once as the LSM is initialized), and a custom sort function customSortFunc (used each time at :UpdateItems() method call)
---#2026_10 options.enableSort Show ^v sort header icons at the dropdown (collapsible) header -> Only if enableFilter == true and not working a contextMenus
+--#2026_09 Custom sorting default values (customSortKey: applied once as the LSM is initialized), and a custom sort function customSortFunc, signature function(table entry1, table entry2, table:nilable comboboxObject): return boolean
+--#2026_10 options.enableSort Show ^v sort header icons at the dropdown (collapsible) header -> Only if enableFilter == true, and not working at contextMenus or submenus
+--#2026_12 Adding nilable:table options.customSortDownButton = { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { up = "", normal = "", pressed = "", disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }, and options.customSortUpButton
 
 [Changed]
 

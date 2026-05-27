@@ -132,8 +132,12 @@ end
 local defaultSortKey = "name"
 local defaultSortKeys = ZO_SORT_BY_NAME
 local defaultSortOrder = ZO_SORT_ORDER_UP
-local function defaultSortFunc(item1, item2, comboBoxObject)
+local function defaultSortFunc(item1, item2, comboBoxObject) --LSMs default sorting function. customSortFunc signature only needs customSortFunc(item1, item2) --#2026_09
 	--d(">defaultSortFunc item1: " .. tos(item1.label or item1.name) .. ", item2: " .. tos(item2.label or item2.name))
+	if not comboBoxObject or not item1 or not item2 then
+		--d("[LSM - ERROR]defaultSortFunc item1, item2 or comboBoxObject nil!")
+		return
+	end
 	local sortOrder = comboBoxObject.m_sortOrder
 	if sortOrder == nil then sortOrder = defaultSortOrder end
 	return ZO_TableOrderingFunction(item1, item2, comboBoxObject.m_LSMsortKey or defaultSortKey, comboBoxObject.m_sortType or defaultSortKeys, sortOrder)
@@ -1836,10 +1840,10 @@ function comboBox_base:UpdateItems(sortUpdate)
 	end
 
 	if self.m_sortOrder ~= nil and self.m_sortsItems then --#2026_09 added ~= nil check to support negative sortOrder (DESC sorting)
---d(">sorting is enabled, sortKey: " ..tos(self.m_LSMsortKey or defaultSortKey) .. ", sortOrder: " .. tos(self.m_sortOrder))
-		local selfVar = self
+--d(">sorting is enabled, sortKey: " ..tos(self.m_LSMsortKey) .. "(default: " ..tos(defaultSortKey).."), sortOrder: " .. tos(self.m_sortOrder))
 		local _, _, _, sortFunction = self:GetSortData() --#2026_09
-		table.sort(self.m_sortedItems, function(item1, item2) return sortFunction(item1, item2, selfVar) end) --#2026_09
+		local selfVar = self
+		table.sort(self.m_sortedItems, function(item1, item2) return sortFunction(item1, item2, selfVar) end) --#2026_09 ... = entry1, entry2 for table.sort's comp(entry1, entry2) function -> used as defaultSortFunc: ZO_TableOrderingFunction
 	end
 
 	if self:IsDropdownVisible() then
