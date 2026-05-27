@@ -1,8 +1,14 @@
+-v- ---------------LSM v2.43 - 2026-05-27--------------------------------------------------------------------------- -v-
+[Added]
+--#2026_09 Custom sorting default values (customSortKey: applied once as the LSM is initialized), and a custom sort function customSortFunc, signature function(table entry1, table entry2, table:nilable comboboxObject): return boolean
+--#2026_10 options.enableSort Show ^v sort header icons at the dropdown (collapsible) header -> Only if enableFilter == true, and not working at contextMenus or submenus
+--#2026_12 Adding nilable:table options.customSortDownButton = { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { up = "", normal = "", pressed = "", disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }, and options.customSortUpButton
+
+
 -v- ---------------LSM v2.42 - 2026-04-30--------------------------------------------------------------------------- -v-
 [Fixed]
 --#2026_07 Pattern parsing error if search term in filter header editBox was using non-escaped special character like (
 --#2026_08 ContextMenu at a slider / editbox does not open if right clicked on the name label (or the label at the right side of the slider)
-
 
 -v- ---------------LSM v2.41 - 2026-02-23--------------------------------------------------------------------------- -v-
 [KNOWN PROBLEMS]

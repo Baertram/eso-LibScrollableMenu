@@ -6,7 +6,7 @@ if LibScrollableMenu ~= nil then return end -- the same or newer version of this
 local lib = ZO_CallbackObject:New()
 lib.name = "LibScrollableMenu"
 lib.author = "Baertram, IsJustaGhost, tomstock, Kyoma"
-lib.version = "2.42"
+lib.version = "2.43"
 if not lib then return end
 --------------------------------------------------------------------
 
@@ -713,7 +713,7 @@ local LSMOptionsToZO_ComboBoxOptionsCallbacks = {
 		if updatedOptions.sortType ~= nil then return end
 
 		local sortType = getValueOrCallback(options.sortType, options) or comboBoxObject.m_sortType
-		comboBoxObject:SetSortOrder(sortType , sortOrder)
+		comboBoxObject:SetSortOrder(sortOrder, sortType) --#2026_12 Fix parameters
 	end,
 	["sortType"] = function(comboBoxObject, sortType)
 		local options = comboBoxObject.options
@@ -724,7 +724,7 @@ local LSMOptionsToZO_ComboBoxOptionsCallbacks = {
 
 		local sortOrder = getValueOrCallback(options.sortOrder, options)
 		if sortOrder == nil then sortOrder = comboBoxObject.m_sortOrder end
-		comboBoxObject:SetSortOrder(sortType , sortOrder )
+		comboBoxObject:SetSortOrder(sortOrder, sortType) --#2026_12 Fix parameters
 	end,
 	["spacing"] = function(comboBoxObject, spacing)
 		comboBoxObject:SetSpacing(spacing) --sets comboBoxObject.m_spacing

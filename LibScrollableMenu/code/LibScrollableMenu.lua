@@ -281,13 +281,11 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 
 
 ---------------------------------------------------------------
-	CHANGELOG Current version: 2.42 - Updated 2026-04-30
+	CHANGELOG Current version: 2.43 - Updated 2026-05-26
 ---------------------------------------------------------------
-Max error #: 2026_08
+Max error #: 2026_12
 
 [WORKING ON]
-
-
 
 [FEATURE]
 
@@ -297,17 +295,17 @@ Max error #: 2026_08
 --======================================================================================================================
 --#2026_01 After a LSM contextMenu was shown and a checkbox was clicked (on the checkbox's label!), the next opened contextMenu's checkbox label
   is not changing the checkbox state (as if the first click is not accepted?), only the 2nd click does. (noticed during BMU LCM -> LSM changes at 2026-01-25)
-
 --#2026_03 Search header contextMenu for last searched does not work on BeamMeUp item filter header?
-
+--#2026_11 Opening a LibSets search UI dropdown e.g. at the DLCIDs and while having it opened left click the gear settings icon at the top tight setSearchUI just shows an empty settings contextMenu (as if ClearCustomScrollableMenu was called?)
 --======================================================================================================================
 
 
 [Fixed]
---#2026_07 Pattern parsing error if search term in filter header editBox was using non-escaped special character like (
---#2026_08 ContextMenu at a slider / editbox does not open if right clicked on the name label (or the label at the right side of the slider)
 
 [Added]
+--#2026_09 Custom sorting default values (customSortKey: applied once as the LSM is initialized), and a custom sort function customSortFunc, signature function(table entry1, table entry2, table:nilable comboboxObject): return boolean
+--#2026_10 options.enableSort Show ^v sort header icons at the dropdown (collapsible) header -> Only if enableFilter == true, and not working at contextMenus or submenus
+--#2026_12 Adding nilable:table options.customSortDownButton = { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { up = "", normal = "", pressed = "", disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }, and options.customSortUpButton
 
 [Changed]
 
