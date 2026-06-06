@@ -50,6 +50,7 @@ But using both on the same control in combination won't work.
 
 [u]Developer reference[/u]
 Read the Github readme file and check file LSM_test.lua for example code, and the LSM_API.lua file please.
+Example: [url="https://wiki.esoui.com/How_to_create_a_scrollable_context_menu"]https://wiki.esoui.com/How_to_create_a_scrollable_context_menu[/URL]
 
 
 Add a scrolhelper (dropdown scrollable) to a ZO_ComboBox:
@@ -444,7 +445,7 @@ LibScrollableMenu's API functions AddCustomScrollableMenuEntry and AddCustomScro
 
 
 [u]GitHub[/u]
-https://github.com/tomstock1337/eso-LibScrollableMenu
+[URL="https://github.com/tomstock1337/eso-LibScrollableMen"]https://github.com/tomstock1337/eso-LibScrollableMenu[/URL]
 
 [U]Planned features[/U]
 -Support for LibCustomMenu (replace it and ZO_Menu e.g. at inventory rows)

@@ -143,7 +143,6 @@ local function test()
 			enableSort = function() return true end, --#2026_10
 			sortOrder = ZO_SORT_ORDER_DOWN,
 			sortType = ZO_SORT_BY_NAME,
-			sortEntries = true,
 			customSortUpButton = { 					   --#2026_12
 				dimensions = { x = 16, y = 16 },
 			    texture = {

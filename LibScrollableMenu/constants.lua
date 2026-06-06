@@ -6,7 +6,7 @@ if LibScrollableMenu ~= nil then return end -- the same or newer version of this
 local lib = ZO_CallbackObject:New()
 lib.name = "LibScrollableMenu"
 lib.author = "Baertram, IsJustaGhost, tomstock, Kyoma"
-lib.version = "2.43"
+lib.version = "2.44"
 if not lib then return end
 --------------------------------------------------------------------
 
@@ -29,10 +29,11 @@ lib._objects = {}
 
 --PreventerVariables
 lib.preventerVars = {
-	--suppressNextOnGlobalMouseUp = nil, --used in comboBox_base:OnGlobalMouseUp and comboBox_base:HiddenForReasons; if this is true the next globalOnMouseUp event on any control is skipped (e.g. to suppress the LSM menus closing by clicking somewhere on GuiRoot as a LSM contextMenu was opened)
+	--suppressNextOnGlobalMouseUp = nil, --used in comboBox_base:OnGlobalMouseUp and comboBox_base:HiddenForReasons; if this is true the next globalOnMouseUp event on any control is skipped (e.g. to suppress the LSM menus closing by clicking somewhere on GuiRoot as a LSM contextMenu was opened). If this is a number it is the mouseButton to check against for the global mouse up event!
 	--suppressNextOnEntryMouseUp = nil,  --used in comboBox_base:HiddenForReasons and dropdownClass:OnEntryMouseUp; if this is true the next OnMouseUp event on any LSM control is skipped (e.g. to suppress the LSM entries to be selected by clicking on a LSM entry beklow an opened LSM contextmenu)
 	--suppressNextOnEntryMouseUpDisableCounter = 0 --used in comboBox_base:HiddenForReasons and dropdownClass:OnEntryMouseUp; if this counter is ~= nil and > 0, it will count the suppressNextOnEntryMouseUp down by 1 each and if it reaches 0 it will reset suppressNextOnEntryMouseUp to nil (e.g. by clicking on a checkbox/radiobutton below an opened LSM contextMenu, the suppressNextOnEntryMouseUp might get set true twice. So we need to skip the 2nd one then)
 	--wasContextMenuOpenedAsOnMouseUpWasSuppressed = nil, --used in comboBox_base closeContextMenuAndSuppressClickCheck, and dropdownClass:OnEntryMouseUp
+	--suppressNextHideContextMenuClearItems = nil, --#2026_11 number - suppress the next n contextMenu's ClearItems() call, via lib.util.hideContextMenu() function. e.g. if contextMenuClass:ShowContextMenu() is detecting that an already opened dropdown of a non-contextMenu should be closed after we directly clicked (having that other LSM's dropdown still opened) on another custom control (eg. a button) to open the contextmenu now -> The contextMenu items would be empty then
 }
 
 --Library's XML functions and code

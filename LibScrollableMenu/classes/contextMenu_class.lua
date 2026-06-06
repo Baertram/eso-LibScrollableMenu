@@ -101,10 +101,11 @@ end
 -- self.data at ShowContextMenu method
  function contextMenuClass:AddContextMenuItem(itemEntry)
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_VERBOSE, 150, tos(itemEntry)) end
---d(debugPrefix .. 'contextMenuClass:AddContextMenuItem - name: ' ..tos(itemEntry.label or itemEntry.name))
-
 	local indexAdded = tins(self.data, itemEntry)
 	indexAdded = indexAdded or #self.data
+
+--d(debugPrefix .. 'contextMenuClass:AddContextMenuItem - name: ' ..tos(itemEntry.label or itemEntry.name) .. ", indexAdded: " ..tos(indexAdded))
+
 	return indexAdded
 --	m_unsortedItems
 end
@@ -202,22 +203,30 @@ function contextMenuClass:ShowContextMenu(parentControl)
 --d(debugPrefix .. "->->->->-> contextMenuClass:ShowContextMenu")
 --d(">resetting some lib.preventerVars")
 	lib.preventerVars.wasContextMenuOpenedAsOnMouseUpWasSuppressed = nil
+	lib.preventerVars.suppressNextOnEntryMouseUp = nil --#2026_01
 	lib.preventerVars.suppressNextOnEntryMouseUpDisableCounter = nil
+	lib.preventerVars.suppressNextHideContextMenuClearItems = nil --#2026_11
 
 	--Cache last opening Control for the comparison with new openingControl and reset of filters etc. below
 	local openingControlOld = self.openingControl
 	if parentControl == nil then parentControl = self.contextMenuIssuingControl or moc() end --#2025_28
 	self.openingControl = parentControl
 
+	--#2026_11 Check if the contextMenu was opened from any LSM entry, or maybe on any custom control (settings menu button of any addon e.g.)
+	-->Is a check for self.contextMenuIssuingControl ~= nil enough for that?
+	local wasOpenedFromOtherLSMEntry = self.contextMenuIssuingControl ~= nil
+--d(">wasOpenedFromOtherLSMEntry: " ..tos(wasOpenedFromOtherLSMEntry))
 
 	-- To prevent the context menu from overlapping a submenu it is not opened from:
 	-- If the opening control is a dropdown and has a submenu visible, close the submenu.
 	local comboBox = getComboBox(parentControl)
 	if comboBox and comboBox.m_submenu and comboBox.m_submenu:IsDropdownVisible() then
+--d("-->Hiding opened submenu's dropdown")
 		comboBox.m_submenu:HideDropdown()
 	end
 
 	if self:IsDropdownVisible() then
+--d("-->Hiding opened dropdown")
 		self:HideDropdown()
 	end
     --d(">Before options: self.enableFilter = " .. tos(self.enableFilter))
@@ -243,19 +252,22 @@ function contextMenuClass:ShowContextMenu(parentControl)
 
 --d("->->->->->->-> [LSM]ContextMenuClass:ShowContextMenu -> ShowDropdown now!")
 	--Check if any non-contextMenu LSM is shown and if that is the case it's OnGlobalMouseUp will fire as it closes
-	if libUtil_isAnyLSMDropdownVisible(false) then --#2025_29
+	local otherLSMDropdownNonContextMenuVisible = libUtil_isAnyLSMDropdownVisible(false)
+	if otherLSMDropdownNonContextMenuVisible == true then --#2025_29
 --d(">supressing next onMouseUp as an LSM is still opened, and the mouse would clear the contextMenu entries")
 		lib.preventerVars.suppressNextOnGlobalMouseUp = true
 	end
 	self:ShowDropdown()
 
 
-	--#2025_29 Next OnGlobalMouse up of any before opened LSM (as we right clicked any other owningWindow's LSM entry to show a contextMenu)
+	--#2025_29 #2026_11 Next OnGlobalMouse up of any before opened LSM (as we either right clicked any other owningWindow's LSM entry [wasOpenedFromOtherLSMEntry = true], or we clicked any custom control [e.g. any buton to show a settings menu] to show a contextMenu)
 	--will fire after the contextMenu here is shown -> and these other onGlobalMouseUps will clear the contextMenu entries via libUtil.hideContextMenu again :-(
-	--todo 20250406 How can we detect this? And then prevent the globalMouseUps (there are 2 in that case: 1 from the new contextMenu's opening control and one from the before opened LSM)
+	--todo 20250406 #2026_11 How can we detect this? And then prevent the globalMouseUps (there are 2 in that case: 1 from the new contextMenu's opening control and one from the before opened LSM)
+	if not wasOpenedFromOtherLSMEntry and otherLSMDropdownNonContextMenuVisible then
+--d(">supressing next 2 HideContextMenu's ClearItems")
+		lib.preventerVars.suppressNextHideContextMenuClearItems = 2 --#2026_11 Set the next 2 g_contextMenu:ClearItems() in function libUtil.hideContextMenu() to do nothing!
+	end
 
-
-	--d(debugPrefix .. "ContextMenuClass:ShowContextMenu - openingControl changed!")
 	throttledCall(function()
 		if openingControlOld ~= parentControl then
 			--d(debugPrefix .. "ContextMenuClass:ShowContextMenu - openingControl changed!")
@@ -299,17 +311,17 @@ function contextMenuClass:UnregisterSpecialCallback(uniqueAddonName, callbackNam
 			if loopedUniqueAddonName == uniqueAddonName then
 				--No callbackname provided, means: delete all
 				if callbackName == nil then
-	d(">no callback specified, deleting all contextMenuCallbacksRegistered[" .. tos(idx) .."][" .. tos(loopedUniqueAddonName) .. "]")
+	--d(">no callback specified, deleting all contextMenuCallbacksRegistered[" .. tos(idx) .."][" .. tos(loopedUniqueAddonName) .. "]")
 					registeredCallbacks = nil
 					toDeleteIndices[idx] = true
 				else
 					--Remove the callbacks of that uniqueAddonName entry
 					if registeredCallbacks[callbackName] ~= nil then
-	d(">deleting contextMenuCallbacksRegistered[" .. tos(idx) .."][" .. tos(loopedUniqueAddonName) .. "][" .. tos(callbackName) .. "]")
+	--d(">deleting contextMenuCallbacksRegistered[" .. tos(idx) .."][" .. tos(loopedUniqueAddonName) .. "][" .. tos(callbackName) .. "]")
 						registeredCallbacks[callbackName] = nil
 						--Check if any other callback is still registered there, else remove the total registered callbacks entry
 						if NonContiguousCount(registeredCallbacks) == 0 then
-	d(">deleting contextMenuCallbacksRegistered[" .. tos(idx) .."][" .. tos(loopedUniqueAddonName) .. "]")
+	--d(">deleting contextMenuCallbacksRegistered[" .. tos(idx) .."][" .. tos(loopedUniqueAddonName) .. "]")
 							registeredCallbacks = nil
 							toDeleteIndices[idx] = true
 						end
@@ -321,7 +333,7 @@ function contextMenuClass:UnregisterSpecialCallback(uniqueAddonName, callbackNam
 
 	if NonContiguousCount(toDeleteIndices) > 0 then
 		for idx, doDelete in pairs(toDeleteIndices) do
-d(">deleting contextMenuCallbacksRegistered[" .. tos(idx) .."]")
+--d(">deleting contextMenuCallbacksRegistered[" .. tos(idx) .."]")
 			lib.contextMenuCallbacksRegistered[idx] = nil
 		end
 	end

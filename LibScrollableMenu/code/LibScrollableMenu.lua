@@ -19,7 +19,7 @@ local sfor = string.format
 local constants = lib.constants
 local entryTypeConstants = constants.entryTypes
 
-
+local libXML  = lib.XML
 local libUtil = lib.Util
 local getControlData = libUtil.getControlData
 local getValueOrCallback = libUtil.getValueOrCallback
@@ -119,8 +119,8 @@ libUtil.MapEntries = mapEntries
 --Called from XML at e.g. the collapsible header's editbox, and other controls
 --Used for event handlers like OnMouseUp, OnClicked and OnChanged etc.
 -->Calls the function owningWindowFunctionName inside the refVar, and passes in the parameters ...
-function lib.XML.OnXMLControlEventHandler(owningWindowFunctionName, refVar, ...)
-	--d(debugPrefix .. "lib.XML.OnXMLControlEventHandler - owningWindowFunctionName: " .. tos(owningWindowFunctionName))
+function libXML.OnXMLControlEventHandler(owningWindowFunctionName, refVar, ...)
+--d(debugPrefix .. "lib.XML.OnXMLControlEventHandler - owningWindowFunctionName: " .. tos(owningWindowFunctionName))
 	if refVar == nil or owningWindowFunctionName == nil then return end
 
 	local owningWindow = refVar:GetOwningWindow()
@@ -137,7 +137,7 @@ end
 
 
 --XML OnClick handler for checkbox and radiobuttons
-function lib.XML.XMLButtonOnInitialize(control, entryType)
+function libXML.XMLButtonOnInitialize(control, entryType)
 	--Which XML button control's handler was used, checkbox or radiobutton?
 	local isCheckbox = entryType == entryTypeConstants.LSM_ENTRY_TYPE_CHECKBOX
 	local isRadioButton = not isCheckbox and entryType == entryTypeConstants.LSM_ENTRY_TYPE_RADIOBUTTON
@@ -145,9 +145,19 @@ function lib.XML.XMLButtonOnInitialize(control, entryType)
 	control:GetParent():SetHandler('OnMouseUp', function(parent, buttonId, upInside, ...)
 --d(debugPrefix .. "XML-OnMouseUp of parent-upInside: " ..tos(upInside) .. ", buttonId: " .. tos(buttonId))
 		if upInside then
-			if checkIfContextMenuOpenedButOtherControlWasClicked(control, parent.m_owner, buttonId) == true then return end
+			if checkIfContextMenuOpenedButOtherControlWasClicked(control, parent.m_owner, buttonId) == true then
+--d("<aborting due to checkIfContextMenuOpenedButOtherControlWasClicked, skipNextOnMouseUp: " .. tos(lib.preventerVars.suppressNextOnEntryMouseUp))
+				return
+			end
 			if buttonId == MOUSE_BUTTON_INDEX_LEFT then
-				if checkNextOnEntryMouseUpShouldExecute() then return end
+				--#2026-01 Here lib.preventerVars.suppressNextOnEntryMouseUp is already true and that way the first click on a checkbox or radio button,
+				--after clicked on another checkbox before and then clossing and reopening the menu, is suppressed
+				--20260606 Maybe the variable lib.preventerVars.suppressNextOnEntryMouseUp needs to be reset on each comboBox's ShowMenu calls?
+
+				if checkNextOnEntryMouseUpShouldExecute() then
+--d("<aborting due to checkNextOnEntryMouseUpShouldExecute, skipNextOnMouseUp: " .. tos(lib.preventerVars.suppressNextOnEntryMouseUp)) --#2026_01
+					return
+				end
 
 				local data = getControlData(parent)
 				local dropdown = parent.m_dropdownObject
@@ -155,9 +165,9 @@ function lib.XML.XMLButtonOnInitialize(control, entryType)
 
 				local onClickedHandler = control:GetHandler('OnClicked')
 				if onClickedHandler then
-					onClickedHandler(control, buttonId)
+					onClickedHandler(control, buttonId) --Calls the OnClicked function below (for checkboxes only, radiobuttons use their default OnClicked handler) now
 
-					dropdown:SubmenuOrCurrentListRefresh(control) --#2025_42
+					dropdown:SubmenuOrCurrentListRefresh(control) --#2025_42 #2026_14 disable
 				end
 
 			elseif buttonId == MOUSE_BUTTON_INDEX_RIGHT then
@@ -174,19 +184,30 @@ function lib.XML.XMLButtonOnInitialize(control, entryType)
 		end
 	end)
 
+	--Checkboxes only!
 	if not isRadioButton then
 		local originalClicked = control:GetHandler('OnClicked')
 		control:SetHandler('OnClicked', function(p_control, buttonId, ignoreCallback, skipHiddenForReasonsCheck, ...)
+--d(debugPrefix .. "XML-OnClicked - buttonId: " .. tos(buttonId) .. ", skipHiddenForReasonsCheck: " ..tos(skipHiddenForReasonsCheck))
 			skipHiddenForReasonsCheck = skipHiddenForReasonsCheck or false
-			if not skipHiddenForReasonsCheck then
-				local parent = p_control:GetParent()
-				local comboBox = parent.m_owner
-				if checkIfContextMenuOpenedButOtherControlWasClicked(p_control, comboBox, buttonId) == true then return end
-			end
-			if checkNextOnEntryMouseUpShouldExecute() then return end
+local prevVars = lib.preventerVars --#2026_01
+--d("PreventerVars-skipNextOnMouseUp: " .. tos(prevVars.suppressNextOnEntryMouseUp) .. ", skipNextGlobalMouseUp: " ..tos(prevVars.suppressNextOnGlobalMouseUp) .. ", skipNextGlobalMouseUp: " ..tos(prevVars.suppressNextOnEntryMouseUpDisableCounter))
 
+			if not skipHiddenForReasonsCheck then
+				local comboBox = (p_control.toggleFunction ~= nil and p_control:GetParent().m_owner) or p_control.m_owner --#2026_14
+				--Check if we clicked the row or the actual checkbox/radiobutton icon in the row -> in that case get the parentControl (the row)
+				if checkIfContextMenuOpenedButOtherControlWasClicked(p_control, comboBox, buttonId) == true then
+--d("<aborting due to checkIfContextMenuOpenedButOtherControlWasClicked, skipNextOnMouseUp: " .. tos(lib.preventerVars.suppressNextOnEntryMouseUp))
+					return
+				end
+			end
+			if checkNextOnEntryMouseUpShouldExecute() then
+				return
+--d("<<aborting due to checkNextOnEntryMouseUpShouldExecute, skipNextOnMouseUp: " .. tos(lib.preventerVars.suppressNextOnEntryMouseUp))
+			end
 			if originalClicked then
-				originalClicked(p_control, buttonId, ignoreCallback, ...)
+--d(">originalClicked called!")
+				originalClicked(p_control, buttonId, ignoreCallback, ...) -- Calls ZO_CheckButton_OnClicked: OnClicked function was set at comboBox_base:SetupEntryCheckbox -> local addCheckButton -> ZO_CheckButton_SetToggleFunction -> local toggleFunction (in comboBox_base:SetupEntryCheckbox)
 			end
 			p_control.checked = nil
 		end)
@@ -198,7 +219,7 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 
 --Load of the addon/library starts
-local function onAddonLoaded(event, name)
+local function onAddonLoaded(eventId, name)
 	if name:find("^ZO_") then return end
 	EM:UnregisterForEvent(MAJOR, EVENT_ADD_ON_LOADED)
 
@@ -281,9 +302,10 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 
 
 ---------------------------------------------------------------
-	CHANGELOG Current version: 2.43 - Updated 2026-05-26
+	CHANGELOG Current version: 2.44 - Updated 2026-06-06
 ---------------------------------------------------------------
-Max error #: 2026_12
+Max error #: 2026_14
+
 
 [WORKING ON]
 
@@ -293,19 +315,20 @@ Max error #: 2026_12
 --======================================================================================================================
 [KNOWN PROBLEMS]
 --======================================================================================================================
---#2026_01 After a LSM contextMenu was shown and a checkbox was clicked (on the checkbox's label!), the next opened contextMenu's checkbox label
+--#2026_01 After a LSM contextMenu was shown and a checkbox was clicked (on the checkbox's label, not the icon!), the next opened contextMenu's checkbox label
   is not changing the checkbox state (as if the first click is not accepted?), only the 2nd click does. (noticed during BMU LCM -> LSM changes at 2026-01-25)
 --#2026_03 Search header contextMenu for last searched does not work on BeamMeUp item filter header?
---#2026_11 Opening a LibSets search UI dropdown e.g. at the DLCIDs and while having it opened left click the gear settings icon at the top tight setSearchUI just shows an empty settings contextMenu (as if ClearCustomScrollableMenu was called?)
+
 --======================================================================================================================
 
 
 [Fixed]
+--#2026_01 1st click on a checkbox/radio button in a new opened contextMenu, after another contextMenu was opened before and a checkbox/radiobutton was clicked inside, did not work
+--#2026_11 Opening a contextMenu from a non LSM control (e.g. custom button to show the contextMenu on) showed the contextMenu empty, if another LSM non-contextMenu dropdown was opened at that time)
+--#2026_13 Opening a contextmenu sometimes made it vanish behind the openingControl, due to the automatic (sub)menuRefreshs (if enabled)
+--#2026_14 Checkboxes/Radiobuttons clicked in opened submenus closed the submenus sometimes
 
 [Added]
---#2026_09 Custom sorting default values (customSortKey: applied once as the LSM is initialized), and a custom sort function customSortFunc, signature function(table entry1, table entry2, table:nilable comboboxObject): return boolean
---#2026_10 options.enableSort Show ^v sort header icons at the dropdown (collapsible) header -> Only if enableFilter == true, and not working at contextMenus or submenus
---#2026_12 Adding nilable:table options.customSortDownButton = { nilable:table dimensions = { number x = 18, number y = 18 }, nilable:table texture = { up = "", normal = "", pressed = "", disabled = "" }, nilable:table anchor = { number:pointOnMe = LEFT, target = userdata:control, number:pointOnTarget = LEFT, nilable:number offsetX = 0, nilable:number offsetY = 0 }, and options.customSortUpButton
 
 [Changed]
 
@@ -320,6 +343,5 @@ TODO - To check (future versions)
 ---------------------------------------------------------------
 UPCOMING FEATURES  - What could be added in the future?
 ---------------------------------------------------------------
-	1. Sort headers for the dropdown (ascending/descending) (maybe: allowing custom sort functions too)
-	2. LibCustomMenu and ZO_Menu replacement (currently postponed, see code at branch LSM v2.4) due to several problems with ZO_Menu (e.g. zo_callLater used by addons during context menu addition) and chat, and other problems
+	1. LibCustomMenu and ZO_Menu replacement (currently postponed, see code at branch LSM v2.4) due to several problems with ZO_Menu (e.g. zo_callLater used by addons during context menu addition) and chat, and other problems
 ]]

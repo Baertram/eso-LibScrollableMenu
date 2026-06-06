@@ -294,6 +294,7 @@ GetCustomScrollableMenuRowData = libUtil.getControlData
 --)
 ---> returns nilable:number indexOfNewAddedEntry, nilable:table newEntryData
 function AddCustomScrollableMenuEntry(text, callback, entryType, entries, additionalData)
+--d(debugPrefix .. "AddCustomScrollableMenuEntry - text: " .. tos(text) .. ", type: " ..tos(entryType) .. ", entries: " ..tos(entries))
 	--Special handling for dividers
 	updateContextMenuRef()
 	local options = g_contextMenu:GetOptions()
@@ -571,8 +572,8 @@ end
 function ShowCustomScrollableMenu(controlToAnchorTo, options, specialCallbackData) --#2025_45
 	updateContextMenuRef()
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_DEBUG, 171, tos(getControlName(controlToAnchorTo)), tos(options)) end
-	--d("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
-	--df(debugPrefix.."_-_-_-_-_ShowCustomScrollableMenu - controlToAnchorTo: %s, options: %s", tos(getControlName(controlToAnchorTo)), tos(options))
+--d("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
+--df(debugPrefix.."_-_-_-_-_ShowCustomScrollableMenu - controlToAnchorTo: %s, options: %s", tos(getControlName(controlToAnchorTo)), tos(options))
 
 	--[[
 	--#2025_22 Check if the openingControl is another contextMenu -> We cannot show a contextMenu on a contextMenu
@@ -756,7 +757,11 @@ RefreshCustomScrollableMenu = LSM_RefreshLibScrollableMenu
 local function LSM_IsContextMenuCurrentlyShown()
 	g_contextMenu = updateContextMenuRef()
 	if g_contextMenu == nil then return false end
-	return g_contextMenu:IsDropdownVisible()
+	local isDropdownVisible = g_contextMenu:IsDropdownVisible()
+	if not isDropdownVisible then
+		isDropdownVisible = g_contextMenu.m_dropdownObject.control:IsHidden() --#2026_13
+	end
+	return isDropdownVisible
 end
 IsCustomScrollableContextMenuShown = LSM_IsContextMenuCurrentlyShown --#2025_59
 

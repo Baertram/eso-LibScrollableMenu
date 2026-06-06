@@ -467,25 +467,7 @@ function comboBoxClass:ShowDropdownInternal()
 	self.m_container:RegisterForEvent(EVENT_GLOBAL_MOUSE_UP, function(...) self:OnGlobalMouseUp(...) end)
 end
 
-
-function comboBoxClass:OnGlobalMouseUp(eventCode, button)
---d("[LSM]comboBoxClass:OnGlobalMouseUp - visible: " ..tos(self:IsDropdownVisible()))
-	if self:IsDropdownVisible() then
-		if button == MOUSE_BUTTON_INDEX_LEFT and not self.m_dropdownObject:IsMouseOverControl() then
---d(">1HideDropdown now")
-			self:HideDropdown()
-		end
-	else
-		if self.m_container:IsHidden() then
---d(">2HideDropdown now")
-			self:HideDropdown()
-		else
-			-- If shown in ShowDropdownInternal, the global mouseup will fire and immediately dismiss the combo box. We need to
-			-- delay showing it until the first one fires.
-			self:ShowDropdownOnMouseUp()
-		end
-	end
-end
+--function comboBoxClass:OnGlobalMouseUp(eventCode, button) --#2026_14 20260606 See comboBox_base:OnGlobalMouseUp -> is calling self:HiddenForReasons to prevent GlobalMouseUp click handler closing opened submenus if a checkbox/radiobutton was clicked (and many more circumstances)
 
 function comboBoxClass:ShowDropdownOnMouseUp()
 --d("[LSM]comboBoxClass:ShowDropdownOnMouseUp - enabled: " ..tos(self:IsEnabled()))
