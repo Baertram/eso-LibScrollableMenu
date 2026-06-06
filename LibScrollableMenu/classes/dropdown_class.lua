@@ -50,6 +50,7 @@ local zo_comboBoxDropdown_onMouseEnterEntry = ZO_ComboBoxDropdown_Keyboard.OnMou
 --LSM library locals
 --------------------------------------------------------------------
 local g_contextMenu
+local LSM_IsContextMenuCurrentlyShown
 
 local has_submenu = true
 local no_submenu = false
@@ -127,6 +128,24 @@ local filterFunc				--the filter function to use. Default is "defaultFilterFunc"
 local throttledCallDropdownClassSetFilterStringSuffix =  "_DropdownClass_SetFilterString"
 local throttledCallDropdownClassOnTextChangedStringSuffix =  "_DropdownClass_OnTextChanged"
 local throttledCallDropdownClassOnValueChangedStringSuffix =  "_DropdownClass_OnValueChanged"
+
+
+--ContextMenu
+local function checkIfContextMenuVisibleAndBringToTopAgain(dropdown, comboBox, delay) --#2026_13
+	--Check if contextMenu was shown/is open and bring it to the top again, after the refresh #2026_13
+	g_contextMenu = getContextMenuReference()
+	LSM_IsContextMenuCurrentlyShown = LSM_IsContextMenuCurrentlyShown or IsCustomScrollableContextMenuShown
+--d("[LSM]checkIfContextMenuVisibleAndBringToTopAgain - visible: " .. tos(LSM_IsContextMenuCurrentlyShown()))
+	if not LSM_IsContextMenuCurrentlyShown() then return end
+
+	delay = delay or 10
+
+	zo_callLater(function()
+--d(">Bringing LSM contextMenu to the top again (because of automatic menu/submenu resfresh")
+		g_contextMenu.m_dropdownObject.control:BringWindowToTop() --#2026_13
+	end, delay)
+end
+
 
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
@@ -208,7 +227,7 @@ end
 --#2025_44/2025_57 checkFunction to define we do not need an additional update of the current (sub)menu, as we are coming from the OnMouseUp runHandler and
 --dropdown:SubmenuOrCurrentListRefresh(control) is always called before! So we only need to update the parentMenu entries
 local function checkFuncOnMouseUpRunHandler_NoCurrentMenuUpdate(comboBox, control, data, isRecursiveCall, ...)
-d("[LSM]checkFuncOnMouseUpRundHandler_NoCurrentMenuUpdate - control: " .. getControlName(control) .. ", isRecursiveCall: " .. tos(isRecursiveCall))
+--d("[LSM]checkFuncOnMouseUpRundHandler_NoCurrentMenuUpdate - control: " .. getControlName(control) .. ", isRecursiveCall: " .. tos(isRecursiveCall))
 	--Always suppress the refresh try on either current entry's menu or submenu (depending on the return value of dropdown:SubmenuOrCurrentListRefresh(control) which was called at
 	--the runHandler["OnMouseUp"] already. But allow the following ones later (from the parentMenus, if available).
 	--Param isRecursiveCall == true will tell us that we are at the recursively parsed parentMenus
@@ -219,13 +238,13 @@ d("[LSM]checkFuncOnMouseUpRundHandler_NoCurrentMenuUpdate - control: " .. getCon
 	local LSM_menuRefreshVar = select(1, ...)
 	local entryControlUsedForOnMouseUpRunHandler = select(2, ...)
 	if not LSM_menuRefreshVar or entryControlUsedForOnMouseUpRunHandler == nil then
-		d("<1 fixed allowed")
+		--d("<1 fixed allowed")
 		--No menu update was done via runHandler["OnMouseUp"] , allow it now
 		return true
 	elseif LSM_menuRefreshVar ~= nil and entryControlUsedForOnMouseUpRunHandler ~= nil then
 		if LSM_menuRefreshVar == LSM_normalMenuRefreshDone then
 			--Menu update was done via runHandler["OnMouseUp"], only allow parentMenu update
-d("<2 isRecursiveCall: " ..tos(isRecursiveCall))
+--d("<2 isRecursiveCall: " ..tos(isRecursiveCall))
 			return isRecursiveCall
 		elseif LSM_menuRefreshVar == LSM_submenuRefreshDone then
 			local allowRefresh = false
@@ -240,13 +259,13 @@ d("<2 isRecursiveCall: " ..tos(isRecursiveCall))
 				if owner ~= nil and owner.openingControl ~= nil then
 					allowRefresh = owner.openingControl ~= control
 				end
-d(">entryControlUsedForOnMouseUpRunHandler: " .. tos(getControlName(entryControlUsedForOnMouseUpRunHandler)) .. ", owner: " .. tos(owner) .. ", openingControl: " .. tos(owner ~= nil and owner.openingControl or nil))
+--d(">entryControlUsedForOnMouseUpRunHandler: " .. tos(getControlName(entryControlUsedForOnMouseUpRunHandler)) .. ", owner: " .. tos(owner) .. ", openingControl: " .. tos(owner ~= nil and owner.openingControl or nil))
 			end
-d("<3 allowRefresh: " ..tos(allowRefresh))
+--d("<3 allowRefresh: " ..tos(allowRefresh))
 			return allowRefresh
 		end
 	end
-d("<4 fixed allowed")
+--d("<4 fixed allowed")
 	return true --allow the refresh in general (better twice than never)
 end
 
@@ -1827,6 +1846,7 @@ function dropdownClass:OnEntryMouseUp(control, button, upInside, ignoreHandler, 
 	--afterwards)
 	lib.preventerVars.suppressNextOnGlobalMouseUp = nil
 	lib.preventerVars.suppressNextOnEntryMouseUp = nil --#2025_13
+	lib.preventerVars.suppressNextHideContextMenuClearItems = nil --#2026_11
 
 	if upInside then
 		local data = getControlData(control)
@@ -2154,6 +2174,7 @@ function dropdownClass:IsAutomaticRefreshEnabled()
 	end
 end
 
+
 --#2025_42 Automatically update all entries (checkbox/radiobutton checked, and all entries enabled state) in a (sub)menu, if e.g. any other entry was clicked
 function dropdownClass:SubmenuOrCurrentListRefresh(control, override, refreshMainMenuOrSubmenu)
 	override = override or false
@@ -2174,6 +2195,7 @@ function dropdownClass:SubmenuOrCurrentListRefresh(control, override, refreshMai
 		zo_callLater(function() --delay the update of the entries a bit so all values have been updated properly before
 			comboBox:Show()
 		end, 15)
+		checkIfContextMenuVisibleAndBringToTopAgain(self, comboBox, 25) --#2026_13
 		return LSM_normalMenuRefreshDone --Normal menu refresh started
 	elseif automaticSubmenuRefresh == true and ( self.m_parentMenu ~= nil or (refreshMainMenuOrSubmenu ~= nil and refreshMainMenuOrSubmenu == false) ) then
 		--Submenu refresh
@@ -2185,6 +2207,7 @@ function dropdownClass:SubmenuOrCurrentListRefresh(control, override, refreshMai
 			-- Must clear now. Otherwise, moving onto a submenu will close it from exiting previous row.
 			clearTimeout()
 			self:ShowSubmenu(owner.openingControl)
+			checkIfContextMenuVisibleAndBringToTopAgain(self, comboBox, 10) --#2026_13
 			return LSM_submenuRefreshDone --Submenu refresh done
 		end
 	end

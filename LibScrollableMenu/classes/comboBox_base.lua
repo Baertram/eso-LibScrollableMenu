@@ -1012,6 +1012,8 @@ function comboBox_base:OnGlobalMouseUp(eventId, button)
 		moc = moc(),
 	}
 	]]
+
+	--Check if any particular mouse button was set to be sekipped in next global mouse up event, or if any mouse button should be skipped once
 	local abortEarly = false
 	local suppressNextOnGlobalMouseUp = lib.preventerVars.suppressNextOnGlobalMouseUp
 	local suppressNextOnGlobalMouseUpType = suppressNextOnGlobalMouseUp ~= nil and type(suppressNextOnGlobalMouseUp) or nil
@@ -1019,12 +1021,13 @@ function comboBox_base:OnGlobalMouseUp(eventId, button)
 		--Supress all next clicks (boolean true)
 		if suppressNextOnGlobalMouseUpType == "boolean" and suppressNextOnGlobalMouseUp == true then
 			abortEarly = true
-			--Supress only e.g. a left click, but not a right click?
+		--Supress only e.g. a left click, but not a right click?
 		elseif suppressNextOnGlobalMouseUpType == "number" and suppressNextOnGlobalMouseUp == button then
 			abortEarly = true
 		end
 	end
 	if abortEarly then
+--d("< < ABORT: due to suppressNextOnGlobalMouseUp!")
 		lib.preventerVars.suppressNextOnGlobalMouseUp = nil
 		return false
 	end
@@ -1035,16 +1038,16 @@ function comboBox_base:OnGlobalMouseUp(eventId, button)
 		if not isMouseOverOwningDropdown then
 --d(">>dropdownVisible -> NO IsMouseOverControl") --#2025_19 Closes a context menu if the clicked entry of the contextmenu was not above the LSM anymore -> Should not directly close if multiselection is enabled in the context menu!
 			if self:HiddenForReasons(button, isMouseOverOwningDropdown) then
-				--d(">>>HiddenForReasons -> Hiding dropdown now")
+--d(">>>HiddenForReasons -> Hiding dropdown now")
 				return self:HideDropdown()
 			end
 		end
 	else
 		if self.m_container:IsHidden() then
-			--d(">>>else - containerIsHidden -> Hiding dropdown now")
+--d(">>>else - containerIsHidden -> Hiding dropdown now")
 			self:HideDropdown()
 		else
-			--d("<SHOW DROPDOWN OnMouseUp")
+--d("<SHOW DROPDOWN OnMouseUp")
 			lib.openMenu = self
 			-- If shown in ShowDropdownInternal, the global mouseup will fire and immediately dismiss the combo box. We need to
 			-- delay showing it until the first one fires.
@@ -1181,11 +1184,12 @@ end
 --return false:	Do not hide the combobox
 --return true: Hide the comboBox
 function comboBox_base:HiddenForReasons(button, isMouseOverOwningDropdown)
+--d(debugPrefix .. "comboBox_base:HiddenForReasons - isMouseOverOwningDropdown: " ..tos(isMouseOverOwningDropdown))
 	g_contextMenu = getContextMenuReference()
 	local owningWindow, mocCtrl, comboBox, mocEntry = getMouseOver_HiddenFor_Info()
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_VERBOSE, 96, tos(button)) end
 
-	--is the mocCtrl a checkbox of a checkBox row -> then get the parent = the row
+	--is the mocCtrl e.g. a checkbox of a checkBox row (or a radiobutton, editbox, slider, ... -> See table isEntryTypeWithParentMocCtrl): then get the parent = the row
 	local mocCtrlOrig = mocCtrl
 	if mocCtrl ~= nil and mocCtrl.m_owner == nil then
 		if (mocCtrl.entryType ~= nil and isEntryTypeWithParentMocCtrl[mocCtrl.entryType]) or mocCtrl.toggleFunction then
@@ -2620,6 +2624,7 @@ d(">enabled: " .. tos(data.enabled))
 		if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_VERBOSE, 121, tos(getControlName(control)), tos(list)) end
 
 		local selfVar = self
+		--Issued from ZO_CheckButton_OnClicked, which is called from lib.XML.XMLButtonOnInitialize(control, entryType)
 		local function toggleFunction(checkbox, checked)
 			local checkedData = getControlData(checkbox:GetParent())
 

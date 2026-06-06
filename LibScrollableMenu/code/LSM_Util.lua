@@ -97,6 +97,42 @@ function libUtil.checkIfValidTexturePath(texturePath) --#2025_63
 	return endsOnDDS
 end
 
+
+--------------------------------------------------------------------
+-- Preventer variable functions
+--------------------------------------------------------------------
+--If preventerVarName exists in lib.preventerVars then check if it is a boolean true and nil it again,
+--but if it's a number > 0 substract 1 until it get's 0, then nil it again
+function libUtil.checkAndUpdatePreventerVar(preventerVarName)
+	local preventerVar = lib.preventerVars[preventerVarName]
+	if preventerVar ~= nil then
+		if preventerVar == true then
+			lib.preventerVars[preventerVarName] = nil
+			return true
+		else
+			local fixPreventerVarNow = false
+			if type(preventerVar) == "number" then
+				if preventerVar > 0 then
+					local newPreventerVarNumber = preventerVar - 1
+					lib.preventerVars[preventerVarName] = (newPreventerVarNumber > 0 and newPreventerVarNumber) or nil
+					return true, newPreventerVarNumber
+				else
+					--Security fix to reset the variable if it was below or equal to 0
+					fixPreventerVarNow = true
+				end
+			else
+				--Security fix to reset the variable if it was no number or boolean
+				fixPreventerVarNow = true
+			end
+			if fixPreventerVarNow then
+				lib.preventerVars[preventerVarName] = nil
+			end
+		end
+	end
+end
+local libUtil_checkAndUpdatePreventerVar = libUtil.checkAndUpdatePreventerVar
+
+
 --------------------------------------------------------------------
 -- Controls
 --------------------------------------------------------------------
@@ -246,7 +282,7 @@ function libUtil.recursiveOverEntries(entry, comboBox, callback, ...)
 	]]
 
 	if endlessLoopPreventionCounter >= 5000 then
-d("["..MAJOR.."]recursiveOverEntries - EEEEEEEEEEEEEEE   --ABORT ENDLESS LOOP--   EEEEEEEEEEEEEE")
+d("["..MAJOR.."]ERROR recursiveOverEntries - EEEEEEEEEEEEEEE   --ABORT ENDLESS LOOP--   EEEEEEEEEEEEEE")
 		return
 	end
 
@@ -666,13 +702,18 @@ end
 local libUtil_BelongsToContextMenuCheck = libUtil.belongsToContextMenuCheck
 
 function libUtil.hideContextMenu()
-	--d(debugPrefix .. "hideContextMenu")
+--d("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	local suppressNextHideContextMenuClearItems = lib.preventerVars.suppressNextHideContextMenuClearItems
+--d(debugPrefix .. "hideContextMenu - suppressClearItems: " .. tos(suppressNextHideContextMenuClearItems))
+--d("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	g_contextMenu = getContextMenuReference()
 	if g_contextMenu == nil then return end
 
 	if g_contextMenu:IsDropdownVisible() then
 		g_contextMenu:HideDropdown()
 	end
+
+	if libUtil_checkAndUpdatePreventerVar("suppressNextHideContextMenuClearItems") then return end
 	g_contextMenu:ClearItems()
 end
 local hideContextMenu = libUtil.hideContextMenu
@@ -695,7 +736,7 @@ end
 
 --Check if a context menu was shown and a control not belonging to that context menu was clicked
 --Returns boolean true if that was the case -> Prevent selection of entries or changes of radioButtons/checkboxes
---while a context menu was opened and one directly clicks on that other entry
+---while a context menu was opened and one directly clicks on that other entry
 function libUtil.checkIfContextMenuOpenedButOtherControlWasClicked(control, comboBox, buttonId)
 --d(debugPrefix .. "checkIfContextMenuOpenedButOtherControlWasClicked")
 	getContextMenuReference()
@@ -933,22 +974,18 @@ end
 
 --20250309 #2025_13 If the last comboBox_base:HiddenForReasons call closed an open contextMenu with multiSelect enabled, and we clicked on an LSM entry of another non-contextmenu
 --to close it, then just exit here and do not select the clicked entry
+--->Return true to skip next OnMouseUp, false to suppress the skip of next OnMouseUp
 function libUtil.checkNextOnEntryMouseUpShouldExecute()
---d(debugPrefix.."libUtil.checkNextOnEntryMouseUpShouldExecute - suppressNextOnEntryMouseUp:" ..tos(lib.preventerVars.suppressNextOnEntryMouseUp))
+--d(debugPrefix.."libUtil.checkNextOnEntryMouseUpShouldExecute - suppressNextOnEntryMouseUp:" ..tos(lib.preventerVars.suppressNextOnEntryMouseUp) .. ", suppressNextOnEntryMouseUpDisableCounter: " ..tos(lib.preventerVars.suppressNextOnEntryMouseUpDisableCounter))
 	if lib.preventerVars.suppressNextOnEntryMouseUp == true then
 		--Was any special handling for the checkboxes/radiobuttons (clicked while an opened LSM contextMenu was on top of them) enabled. Disable the "skip" of next OnMouseUp so it not skipping it twice
-		if lib.preventerVars.suppressNextOnEntryMouseUpDisableCounter ~= nil then
-			lib.preventerVars.suppressNextOnEntryMouseUpDisableCounter = lib.preventerVars.suppressNextOnEntryMouseUpDisableCounter - 1
-			if lib.preventerVars.suppressNextOnEntryMouseUpDisableCounter <= 0 then
-				lib.preventerVars.suppressNextOnEntryMouseUpDisableCounter = 0
-			end
-			if lib.preventerVars.suppressNextOnEntryMouseUpDisableCounter == 0 then
---d("<°°°suppressNextOnEntryMouseUpDisableCounter reached 0 -> Returning false -> Not skipping next OnMouseUp! °°°")
-				lib.preventerVars.suppressNextOnEntryMouseUp = nil
-				return false
-			end
+		local wasProcessed, newPreventerVarNumber = libUtil_checkAndUpdatePreventerVar("suppressNextOnEntryMouseUpDisableCounter")
+		if wasProcessed == true and newPreventerVarNumber ~= nil and newPreventerVarNumber == 0 then --#2026_14
+--d("<°°°suppressNextOnEntryMouseUpDisableCounter reached 0/nil -> Returning false -> Not skipping next OnMouseUp! °°°")
+			lib.preventerVars.suppressNextOnEntryMouseUp = nil
+			return false
 		end
---d("<!!! OnMosueup on LSM entry suppressed !!!")
+--d("<!!! OnMouseUp on LSM entry suppressed !!!")
 		lib.preventerVars.suppressNextOnEntryMouseUp = nil
 		return true
 	end
@@ -957,9 +994,12 @@ end
 
 function libUtil.isAnyLSMDropdownVisible(contextMenuToo)
 	if lib._objects == nil then return false end
+--d(debugPrefix .. "libUtil.isAnyLSMDropdownVisible-contextMenuToo: " ..tos(contextMenuToo))
+	getControlName = getControlName or libUtil.getControlName
 	for _, lsmRef in ipairs(lib._objects) do
 		if lsmRef ~= nil and lsmRef:IsDropdownVisible() then
 			if not contextMenuToo or (contextMenuToo and lsmRef.isContextMenu) then
+--d(">> YES: " ..tos(getControlName(lsmRef.m_container)))
 				return true
 			end
 		end
