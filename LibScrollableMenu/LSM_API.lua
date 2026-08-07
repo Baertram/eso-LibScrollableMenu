@@ -728,15 +728,16 @@ local function LSM_RefreshLibScrollableMenu(mocCtrl, updateMode, comboBox) -- #2
 			comboBox = (mocCtrl.m_comboBox or (mocCtrl.m_owner and mocCtrl.m_owner.m_comboBox)) or nil
 		end
 		if comboBox == nil then return end
---d(">[LSM]found combobox")
+--d(">found combobox")
 		--Main Menu
 		if updateMode == LSM_UPDATE_MODE_BOTH or updateMode == LSM_UPDATE_MODE_MAINMENU then
 			--local owningWindow = mocCtrl.GetOwningWindow ~= nil and mocCtrl:GetOwningWindow() or nil
 			--local mainMenuDropdown = (owningWindow and owningWindow.m_dropdownObject) or nil
-			local mainMenuComboBox = (mocCtrl.m_owner ~= nil and mocCtrl.m_owner.m_comboBox) or nil
+			local mainMenuComboBox = ((mocCtrl.m_owner ~= nil and mocCtrl.m_owner.m_comboBox) or (comboBox.wasUsingAddCustomScrollableComboBoxDropdownMenu == true and mocCtrl.m_owner) or nil) --#2026_15 Support Dropdowns added to existing comboBoxes via AddCustomScrollableComboBoxDropdownMenu
 			local mainMenuDropdown = (mainMenuComboBox ~= nil and mainMenuComboBox.m_dropdownObject) or nil
 			if mainMenuDropdown ~= nil then
 				if mainMenuComboBox:IsDropdownVisible() == true then
+--d(">>dropdownIsVisible! -> SubmenuOrCurrentListRefresh(mocCtrl, true, true)")
 					mainMenuDropdown:SubmenuOrCurrentListRefresh(mocCtrl, true, true)
 				end
 			end
@@ -745,7 +746,7 @@ local function LSM_RefreshLibScrollableMenu(mocCtrl, updateMode, comboBox) -- #2
 		--Submenu
 		if updateMode == LSM_UPDATE_MODE_BOTH or updateMode == LSM_UPDATE_MODE_SUBMENU then
 			if mocCtrl.m_dropdownObject and comboBox and comboBox:IsDropdownVisible() == true then
---d(">[LSM[refresh submenu - TRY")
+--d(">>subMenu dropdownIsVisible! -> SubmenuOrCurrentListRefresh(mocCtrl, true, false)")
 				mocCtrl.m_dropdownObject:SubmenuOrCurrentListRefresh(mocCtrl, true, false)
 			end
 		end

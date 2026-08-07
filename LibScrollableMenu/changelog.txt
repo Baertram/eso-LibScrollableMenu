@@ -1,10 +1,14 @@
+-v- ---------------LSM v2.45 - 2026-08-08--------------------------------------------------------------------------- -v-
+[Fixed]
+--#2026_15 Add support at RefreshCustomScrollableMenu for existing comboBoxes where AddCustomScrollableComboBoxDropdownMenu added the LSM
+
+
 -v- ---------------LSM v2.44 - 2026-06-06--------------------------------------------------------------------------- -v-
 [Fixed]
 --#2026_01 1st click on a checkbox/radio button in a new opened contextMenu, after another contextMenu was opened before and a checkbox/radiobutton was clicked inside, did not work
 --#2026_11 Opening a contextMenu from a non LSM control (e.g. custom button to show the contextMenu on) showed the contextMenu empty, if another LSM non-contextMenu dropdown was opened at that time)
 --#2026_13 Opening a contextmenu sometimes made it vanish behind the openingControl, due to the automatic (sub)menuRefreshs (if enabled)
 --#2026_14 Checkboxes/Radiobuttons clicked in opened submenus closed the submenus sometimes
-
 
 -v- ---------------LSM v2.43 - 2026-05-27--------------------------------------------------------------------------- -v-
 [Added]
@@ -41,7 +45,6 @@ function PreventCustomScrollableContextMenuHide()
 --Mandatory parameter clickCount controls how many clicks it will stay open
 function PreventCustomScrollableContextMenuEntryClickHide(clickCount)
 
-
 -v- ---------------LSM v2.40 - 2025-12-14--------------------------------------------------------------------------- -v-
 [Added]
 #2025_63 Add options.headerCollapsedIcon and options.headerCollapsedTitle
@@ -49,7 +52,6 @@ function PreventCustomScrollableContextMenuEntryClickHide(clickCount)
 --		table headerCollapsedTitle				table or function returning a table of signature { text = "Click to search", color=ZO_ColorDef, font="FontNameHere", align=LEFT|CENTER(default)|RIGHT, offSetX=12, offSetY=-12 }: Title text shown as the header is collapsed (e.g. a text to show you can expand the section and see the search). Default value is nil.
 #2025_64 options.headerToggleTooltip
 --		string headerToggleTooltip				String or function returning a string: Tooltip text for the collapse/expand buttons. Function signature function(state). Default: returns "Collapse"/"Expand" strings from vanilla ESOUI, depending on the current state
-
 
 -v- ---------------LSM v2.39 - 2025-12-09--------------------------------------------------------------------------- -v-
 [Fixed]
@@ -100,8 +102,6 @@ RefreshCustomScrollableMenu(mocCtrl, updateMode, comboBox)
 #2025_56 Change entry's data.doNotFilter: If it's a function it's signature now is doNotFilterFunc(LSM_comboBox, selectedContextMenuItem, openingMenusEntries), so one can e.g. make a button entryType only filter if there is no other entry inside the table currentDropdownEntriesTable
 --->If it's a fucntion you can also specify doNotFilterEntryTypes = table or function returning a table of LSM entryTypes which should be prefiltering the current list, before the doNotFilter function is executed on them (e.g. { LSM_ENTRY_TYPE_CHECKBOX } to only prefilter checkbox entries of the current list)
 
-
-
 -v- ---------------LSM v2.37 - 2025-09-21--------------------------------------------------------------------------- -v-
 [Added]
 -2025_37    Added API function AddCustomScrollableMenuRadioButton(text, callback, checked, buttonGroup, additionalData)
@@ -112,7 +112,6 @@ RefreshCustomScrollableMenu(mocCtrl, updateMode, comboBox)
 
 [Fixed]
 -2025_39 	Clicking icon in contextmenu's submenu will close the entry
-
 
 -v- ---------------LSM v2.36 - 2025-05-30--------------------------------------------------------------------------- -v-
 [Added]
@@ -147,7 +146,6 @@ RefreshCustomScrollableMenu(mocCtrl, updateMode, comboBox)
 -2025_28: 	ContextMenu: API function RunCustomScrollableMenuItemsCallback is not respecting the parameter fromParentMenu
 -2025_29	ContextMenu: Opening a contextmenu on another control, while another LSM was opened, cleared the contextMenu entries
 -2025_30:   ContextMenu: Opening a contextmenu sometimes does not change the maximum width of the entries properly
-
 
 [Added]
 -2025_10:	If multiselection is enabled: Submenus with a selection can show the submenu arrow colored differently. option.multiSelectSubmenuSelectedArrowColor defines the color to use (default is white)
@@ -233,7 +231,6 @@ RefreshCustomScrollableMenu(mocCtrl, updateMode, comboBox)
 -[Fixes]-
 --Search/filter edtibox resets to empty if options.enableFilter == false
 
-
 -v- ---------------LSM v2.2 - 2024-06-02---------------------------------------------------------------------------- -v-
 -[Fixes]-
 --Open and close clicks
@@ -312,6 +309,4 @@ function ShowCustomScrollableMenu(controlToAnchorTo, options)
 
 -API that can be used in a callback function of an entry
 function RunCustomScrollableMenuItemsCallback(comboBox, item, myAddonCallbackFunc, filterEntryTypes, fromParentMenu, ...)
-
-
 -^- ---------------LSM v2.2 - 2024-06-02---------------------------------------------------------------------------- -^-

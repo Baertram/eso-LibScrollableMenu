@@ -302,9 +302,9 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 
 
 ---------------------------------------------------------------
-	CHANGELOG Current version: 2.44 - Updated 2026-06-06
+	CHANGELOG Current version: 2.45 - Updated 2026-08-08
 ---------------------------------------------------------------
-Max error #: 2026_14
+Max error #: 2026_15
 
 
 [WORKING ON]
@@ -323,10 +323,7 @@ Max error #: 2026_14
 
 
 [Fixed]
---#2026_01 1st click on a checkbox/radio button in a new opened contextMenu, after another contextMenu was opened before and a checkbox/radiobutton was clicked inside, did not work
---#2026_11 Opening a contextMenu from a non LSM control (e.g. custom button to show the contextMenu on) showed the contextMenu empty, if another LSM non-contextMenu dropdown was opened at that time)
---#2026_13 Opening a contextmenu sometimes made it vanish behind the openingControl, due to the automatic (sub)menuRefreshs (if enabled)
---#2026_14 Checkboxes/Radiobuttons clicked in opened submenus closed the submenus sometimes
+--#2026_15 Add support at RefreshCustomScrollableMenu for existing comboBoxes where AddCustomScrollableComboBoxDropdownMenu added the LSM
 
 [Added]
 
