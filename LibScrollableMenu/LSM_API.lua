@@ -292,6 +292,7 @@ GetCustomScrollableMenuRowData = libUtil.getControlData
 --		   font = "ZO_FontGame", label="test label", name="test value", enabled = true, checked = true, customValue1="foo", cutomValue2="bar", ... }
 --		--[[ Attention: additionalData keys which are maintained in table LSMOptionsKeyToZO_ComboBoxOptionsKey will be mapped to ZO_ComboBox's key and taken over into the entry.data[ZO_ComboBox's key]. All other "custom keys" will stay in entry.data.additionalData[key]! ]]
 --)
+--callback function signature:  comboBox, itemName, item, selectionChanged, oldItem
 ---> returns nilable:number indexOfNewAddedEntry, nilable:table newEntryData
 function AddCustomScrollableMenuEntry(text, callback, entryType, entries, additionalData)
 --d(debugPrefix .. "AddCustomScrollableMenuEntry - text: " .. tos(text) .. ", type: " ..tos(entryType) .. ", entries: " ..tos(entries))
@@ -389,6 +390,7 @@ local addCustomScrollableMenuEntry = AddCustomScrollableMenuEntry
 --Adds an entry having a submenu (or maybe nested submenues) in the entries table/entries function whch returns a table
 --> See examples for the table "entries" values above AddCustomScrollableMenuEntry
 --Existing context menu entries will be kept (until ClearCustomScrollableMenu will be called)
+--callback function signature:  comboBox, itemName, item, selectionChanged, oldItem
 ---> returns nilable:number indexOfNewAddedEntry, nilable:table newEntryData
 function AddCustomScrollableSubMenuEntry(text, entries, callbackFunc, additionalData) --#2026_04
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_DEBUG, 163, tos(text), tos(entries)) end
@@ -412,8 +414,8 @@ function AddCustomScrollableMenuHeader(text, additionalData)
 end
 
 --Adds a checkbox line to the context menu entries
---callback function signature:  comboBox, itemName, item, checked, data
 --Existing context menu entries will be kept (until ClearCustomScrollableMenu will be called)
+--callback function signature:  comboBox, itemName, item, checked, data
 ---> returns nilable:number indexOfNewAddedEntry, nilable:table newEntryData
 function AddCustomScrollableMenuCheckbox(text, callback, checked, additionalData)
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_DEBUG, 166, tos(text), tos(checked)) end
@@ -428,8 +430,8 @@ end
 --The buttonGroup number (function returning a number) controls which group the radiobutton belongs to (same number = 1 group)
 -->If the buttonGroup is not specified it will be automatically set to 1!
 -->If you want to specify the buttonGroupOnSelectionChangedCallback function(control, previousControl), add it to the additionalData table
---callback function signature:  comboBox, itemName, item, checked, data
 --Existing context menu entries will be kept (until ClearCustomScrollableMenu will be called)
+--callback function signature:  comboBox, itemName, item, checked, data
 ---> returns nilable:number indexOfNewAddedEntry, nilable:table newEntryData
 function AddCustomScrollableMenuRadioButton(text, callback, checked, buttonGroup, additionalData)
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_DEBUG, 189, tos(text), tos(checked), tos(buttonGroup)) end
@@ -445,6 +447,7 @@ end
 --Adds an editBox line to the context menu entries
 --Existing context menu entries will be kept (until ClearCustomScrollableMenu will be called)
 -->Clicking the line does not call any callback, only changing the text in the editBox calls the callback!
+--callback function signature:  comboBox, filterBox, text
 ---> returns nilable:number indexOfNewAddedEntry, nilable:table newEntryData
 function AddCustomScrollableMenuEditBox(text, callback, editBoxData, additionalData)
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_DEBUG, 188, tos(text), tos(editBoxData)) end
@@ -458,6 +461,7 @@ end
 --Adds a slider line to the context menu entries
 --Existing context menu entries will be kept (until ClearCustomScrollableMenu will be called)
 -->Clicking the line does not call any callback, only changing the slider value calls the callback!
+--callback function signature:  comboBox, slider, value
 ---> returns nilable:number indexOfNewAddedEntry, nilable:table newEntryData
 function AddCustomScrollableMenuSlider(text, callback, sliderData, additionalData)
 	if libDebug.doDebug then dlog(libDebug.LSM_LOGTYPE_DEBUG, 191, tos(text), tos(sliderData)) end
