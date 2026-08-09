@@ -919,38 +919,29 @@ lib.ButtonGroupDefaultContextMenu = buttonGroupDefaultContextMenu
 --- SORT API functions
 local function sortASC(a, b)
 	if a == nil or b == nil then return false end
-	local aLabel = a.label
-	local aName = a.name
-	local bLabel = b.label
-	local bName = b.name
-
-	if aLabel and bLabel then return aLabel < bLabel
-	elseif aName and bName then return aName < bName
-	elseif aName and bLabel then return aName < bLabel
-	elseif aLabel and bName then return aLabel < bName
-	end
+	local aLabel, aName, bLabel, bName = a.label, a.name, b.label, b.name
+	return (aLabel and bLabel and aLabel < bLabel)
+	 		or (aName and bLabel and aName < bLabel)
+			or (aLabel and bName and aLabel < bName)
+			or (aName and bName and aName < bName)
 end
 local function sortDESC(a, b)
 	if a == nil or b == nil then return false end
-	if a.label and b.label then return a.label > b.label
-	elseif a.name and b.name then return a.name > b.name
-	elseif a.name and b.label then return a.name > b.label
-	elseif a.label and b.name then return a.label > b.name
-	end
-end
-local function sortLSMMenuEntries(a, b, sortOrder)
-	local sortOrderValue = sortOrder
-	if type(sortOrder) == "function" then
-		sortOrderValue = sortOrder(a, b)
-	end
-	return (sortOrderValue == ZO_SORT_ORDER_UP and sortASC(a, b)) or sortDESC(a, b)
+	local aLabel, aName, bLabel, bName = a.label, a.name, b.label, b.name
+	return (aLabel and bLabel and aLabel > bLabel)
+			or (aName and bLabel and aName > bLabel)
+			or (aLabel and bName and aLabel > bName)
+			or (aName and bName and aName > bName)
 end
 
---Comparator function for table.sort function, automatically checking for LSM entry's label or name attribute to compare them alphabetically
---Parameters a and b must be the LSM entries to compare
+--Sort function using table.sort, automatically checking for LSM entry's label or name attribute to compare them alphabetically.
+--Parameter tableToSort must be the table that should be sorted
 --Parameter sortOrder must be a boolean (like ZO_SORT_ORDER_UP -> ASC: A to Z, and ZO_SORT_ORDER_DOWN -> DESC: Z to A), or function returning a boolean
-function CustomScrollableMenuSortComparator(a, b, sortOrder) --#2026_16
-	return sortLSMMenuEntries(a, b, sortOrder)
+function SortCustomScrollableMenu(tableToSort, sortOrder) --#2026_16
+	assert(type(tableToSort) ~= "table", MAJOR .. " - SortCustomScrollableMenu ERROR: Parameter tableToSort must be a table!")
+	local sortOrderValue = getValueOrCallback(sortOrder)
+	if sortOrderValue == nil then sortOrderValue = ZO_SORT_ORDER_UP end
+	table.sort(tableToSort, (sortOrderValue == ZO_SORT_ORDER_UP and sortASC) or sortDESC)
 end
 
 

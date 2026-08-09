@@ -327,10 +327,10 @@ Max error #: 2026_16
 
 [Added]
 --#2026_16 Added API function
----Comparator function for table.sort function, automatically checking for LSM entry's label or name attribute to compare them alphabetically
----Parameters a and b must be the LSM entries to compare
+---Sort function using table.sort, automatically checking for LSM entry's label or name attribute to compare them alphabetically.
+---Parameter tableToSort must be the table that should be sorted
 ---Parameter sortOrder must be a boolean (like ZO_SORT_ORDER_UP -> ASC: A to Z, and ZO_SORT_ORDER_DOWN -> DESC: Z to A), or function returning a boolean
----function CustomScrollableMenuSortComparator(a, b, sortOrder) --#2026_16
+---function SortCustomScrollableMenu(tableToSort, sortOrder) --#2026_16
 
 [Changed]
 
