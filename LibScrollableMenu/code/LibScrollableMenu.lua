@@ -302,9 +302,9 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 
 
 ---------------------------------------------------------------
-	CHANGELOG Current version: 2.45 - Updated 2026-08-08
+	CHANGELOG Current version: 2.45 - Updated 2026-08-09
 ---------------------------------------------------------------
-Max error #: 2026_15
+Max error #: 2026_16
 
 
 [WORKING ON]
@@ -326,6 +326,11 @@ Max error #: 2026_15
 --#2026_15 Add support at RefreshCustomScrollableMenu for existing comboBoxes where AddCustomScrollableComboBoxDropdownMenu added the LSM
 
 [Added]
+--#2026_16 Added API function
+---Comparator function for table.sort function, automatically checking for LSM entry's label or name attribute to compare them alphabetically
+---Parameters a and b must be the LSM entries to compare
+---Parameter sortOrder must be a boolean (like ZO_SORT_ORDER_UP -> ASC: A to Z, and ZO_SORT_ORDER_DOWN -> DESC: Z to A), or function returning a boolean
+---function CustomScrollableMenuSortComparator(a, b, sortOrder) --#2026_16
 
 [Changed]
 
