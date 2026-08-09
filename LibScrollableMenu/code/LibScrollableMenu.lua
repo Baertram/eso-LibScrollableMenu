@@ -302,9 +302,9 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 
 
 ---------------------------------------------------------------
-	CHANGELOG Current version: 2.45 - Updated 2026-08-09
+	CHANGELOG Current version: 2.45 - Updated 2026-08-10
 ---------------------------------------------------------------
-Max error #: 2026_17
+Max error #: 2026_20
 
 
 [WORKING ON]
@@ -324,6 +324,8 @@ Max error #: 2026_17
 
 [Fixed]
 --#2026_15 Add support at RefreshCustomScrollableMenu for existing comboBoxes where AddCustomScrollableComboBoxDropdownMenu added the LSM
+--#2026_18 Clicking on a checkbox in a submenu (the [ ], not the name label!) the refresh of the e.g. enabled state of other entries in the same submenu did not work
+--#2026_19 Debugging functions did not work, debugging ON/OFF chat messages did not show, and some messages got not enough/too many parameters
 
 [Added]
 --#2026_16 Added API function SortCustomScrollableMenu
@@ -341,6 +343,7 @@ Max error #: 2026_17
 function GetCustomScrollableMenuCtrlsInfo(ctrl, comboBoxFromParentMenu)
 
 [Changed]
+--#2026_20 the enabled function currently only uses the data table, but should provide comboBox, data as parameters (like the callback functions)
 
 [Removed]
 

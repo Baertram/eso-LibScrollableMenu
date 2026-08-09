@@ -24,7 +24,9 @@ local tins = table.insert
 
 local tableType   = "table"
 local booleanType = "boolean"
+local userDataType = "userdata"
 
+local constants = lib.constants
 
 --------------------------------------------------------------------
 --Library classes
@@ -66,6 +68,7 @@ local checkEntryType = libUtil.checkEntryType
 local libUtil_BelongsToContextMenuCheck = libUtil.belongsToContextMenuCheck
 local getDataSource = libUtil.getDataSource
 local getComboBox = libUtil.getComboBox
+local libUtil_getEntryTypeControl = libUtil.getEntryTypeControl
 
 local g_contextMenu
 local buttonGroupDefaultContextMenu
@@ -285,7 +288,8 @@ GetCustomScrollableMenuRowData = libUtil.getControlData
 --					width = "80%",								-- optional string/number or function returning a string/number The width of the slider
 --					contextMenuCallback = function(comboBox, selfSlider, data) end,	-- optional function to open a contextMenu at the slider (if right clicked)
 --		->		}
---		isNew = false, --  optional booelan or function returning a boolean Is this entry a new entry and thus shows the "New" icon?
+--		enabled = false, -- optional boolean or function isEnabled(comboBox, data) returning a boolean. Is this entry enabled (mouse over & clickable)
+--		isNew = false, --  optional boolean or function returning a boolean Is this entry a new entry and thus shows the "New" icon?
 --		entries = { ... see above ... }, -- optional table containing nested submenu entries in this submenu -> This entry opens a new nested submenu then. Contents of entries use the same values as shown in this example here
 --		contextMenuCallback = function(comboBox, control, data) ... end, -- optional function for a right click action, e.g. show a scrollable context menu at the menu entry
 --		doNotFilter = false, --boolean or function returning a boolean. If true this entry won't be hidden (filtered) if the header's filter editbox is used. If it's a function it's signature is doNotFilterFunc(LSM_comboBox, selectedMenuItem, openingMenusEntries), so one can e.g. make a button entryType only filter if there is no other entry inside the table currentDropdownEntriesTable
@@ -636,7 +640,7 @@ local showCustomScrollableMenu = ShowCustomScrollableMenu
 --> returns owning comboBox object, itemData table
 function GetCustomScrollableMenuCtrlsInfo(ctrl, comboBoxFromParentMenu) --#2026_17
 	ctrl = ctrl or moc()
-	assert(type(ctrl) == "userdata", sfor("["..MAJOR..":GetCustomScrollableMenuCtrlsInfo] ctrl: userdata expected"))
+	assert(type(ctrl) == userDataType, sfor("["..MAJOR..":GetCustomScrollableMenuCtrlsInfo] ctrl: userdata expected"))
 	return getComboBox(ctrl, comboBoxFromParentMenu), getDataSource(ctrl)
 end
 
@@ -743,10 +747,15 @@ end
 --->LSM_UPDATE_MODE_BOTH		Update the submenu and the mainmenu, both
 ---Parameter comboBox is optional
 local function LSM_RefreshLibScrollableMenu(mocCtrl, updateMode, comboBox) -- #2025_58
+	local refreshDone = 0
 	--Update the visible LSM dropdown's submenu now so the disabled state and checkbox values commit again
 	if mocCtrl == nil then mocCtrl = moc() end
 --d("[RefreshCustomScrollableMenu] - moc: " .. getControlName(mocCtrl) .. "; updateMode: " ..tos(updateMode) .. "; comboBox: " .. tos(comboBox))
 	if mocCtrl ~= nil then
+		--#2026_18 Check if the mocCtrl is a [ ] of a checkbox or a ( ) or a radiobutton (you did not click the name label but the icon),
+		--and get the proper label control then instead, to let this function properly work (editBox/slider also need that here?)
+		mocCtrl = libUtil_getEntryTypeControl(mocCtrl)
+--d(">moc or parent: " .. getControlName(mocCtrl))
 		if comboBox == nil then
 			comboBox = (mocCtrl.m_comboBox or (mocCtrl.m_owner and mocCtrl.m_owner.m_comboBox)) or nil
 		end
@@ -761,7 +770,8 @@ local function LSM_RefreshLibScrollableMenu(mocCtrl, updateMode, comboBox) -- #2
 			if mainMenuDropdown ~= nil then
 				if mainMenuComboBox:IsDropdownVisible() == true then
 --d(">>dropdownIsVisible! -> SubmenuOrCurrentListRefresh(mocCtrl, true, true)")
-					mainMenuDropdown:SubmenuOrCurrentListRefresh(mocCtrl, true, true)
+					refreshDone = mainMenuDropdown:SubmenuOrCurrentListRefresh(mocCtrl, true, true) --calls dropdownClass:SubmenuOrCurrentListRefresh(control, override, refreshMainMenuOrSubmenu)
+					refreshDone = refreshDone or 0
 				end
 			end
 		end
@@ -770,10 +780,13 @@ local function LSM_RefreshLibScrollableMenu(mocCtrl, updateMode, comboBox) -- #2
 		if updateMode == LSM_UPDATE_MODE_BOTH or updateMode == LSM_UPDATE_MODE_SUBMENU then
 			if mocCtrl.m_dropdownObject and comboBox and comboBox:IsDropdownVisible() == true then
 --d(">>subMenu dropdownIsVisible! -> SubmenuOrCurrentListRefresh(mocCtrl, true, false)")
-				mocCtrl.m_dropdownObject:SubmenuOrCurrentListRefresh(mocCtrl, true, false)
+				local refreshDoneSubmenu = mocCtrl.m_dropdownObject:SubmenuOrCurrentListRefresh(mocCtrl, true, false) --calls dropdownClass:SubmenuOrCurrentListRefresh(control, override, refreshMainMenuOrSubmenu)
+				refreshDoneSubmenu = refreshDoneSubmenu or 0
+				refreshDone = refreshDone + refreshDoneSubmenu
 			end
 		end
 	end
+--d(">>>>RefreshDone: " ..tos(refreshDone))
 end
 RefreshCustomScrollableMenu = LSM_RefreshLibScrollableMenu
 
@@ -829,6 +842,12 @@ end
 -- API to show a context menu at a buttonGroup where you can (un)check/invert all buttons in a group:
 -- Select all, Unselect All, Invert all.
 function buttonGroupDefaultContextMenu(comboBox, control, data, useZO_Menu)
+lib._debugButtonGroupDefaultContextMenu = {
+	comboBox = comboBox,
+	control = control,
+	data = data,
+	useZO_Menu = useZO_Menu,
+}
 	if useZO_Menu == nil then
 		--Try to auto detect if we cannot use LSM here (because another LSM contextMenu is already opened)
 		useZO_Menu = LSM_IsContextMenuCurrentlyShown()

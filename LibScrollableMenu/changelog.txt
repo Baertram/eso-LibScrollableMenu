@@ -1,6 +1,9 @@
--v- ---------------LSM v2.45 - 2026-08-08--------------------------------------------------------------------------- -v-
+-v- ---------------LSM v2.45 - 2026-08-10--------------------------------------------------------------------------- -v-
 [Fixed]
 --#2026_15 Add support at RefreshCustomScrollableMenu for existing comboBoxes where AddCustomScrollableComboBoxDropdownMenu added the LSM
+--#2026_18 Clicking on a checkbox in a submenu (the [ ], not the name label!) the refresh of the e.g. enabled state of other entries in the same submenu did not work
+--#2026_19 Debugging functions did not work, debugging ON/OFF chat messages did not show, and some messages got not enough/too many parameters
+
 [Added]
 --#2026_16 Added API function SortCustomScrollableMenu
 --Sort function using table.sort, automatically checking for LSM entry's label or name attribute to compare them alphabetically,
@@ -15,6 +18,9 @@
 -- Parameter comboBoxFromParentMenu boolean defines if you want the owning LSM menu's comboBox, or the current ctrl's one
 --> returns owning comboBox object, itemData table
 function GetCustomScrollableMenuCtrlsInfo(ctrl, comboBoxFromParentMenu)
+[Changed]
+--#2026_20 the enabled function currently only uses the data table, but should provide comboBox, data as parameters (like the callback functions)
+
 
 
 -v- ---------------LSM v2.44 - 2026-06-06--------------------------------------------------------------------------- -v-
