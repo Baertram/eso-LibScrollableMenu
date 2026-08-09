@@ -679,11 +679,6 @@ function RunCustomScrollableMenuItemsCallback(comboBox, item, myAddonCallbackFun
 		local comboBoxNew, itemDataNew = getCustomScrollableMenuCtrlsInfo(mocCtrl, fromParentMenu)
 		if comboBox == nil then comboBox = comboBoxNew end
 		if item == nil then item = itemDataNew end
-
-		lib._RunCustomScrollableMenuItemsCallback = {
-			comboBox = comboBox,
-			item = item
-		}
 	end
 	if item == nil or comboBox == nil then
 		d(MAJOR.. " - RunCustomScrollableMenuItemsCallback ERROR: Parameters comboBox, item must be provided!")
