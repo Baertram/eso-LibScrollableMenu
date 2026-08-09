@@ -286,6 +286,7 @@ GetCustomScrollableMenuRowData = libUtil.getControlData
 --		isNew = false, --  optional booelan or function returning a boolean Is this entry a new entry and thus shows the "New" icon?
 --		entries = { ... see above ... }, -- optional table containing nested submenu entries in this submenu -> This entry opens a new nested submenu then. Contents of entries use the same values as shown in this example here
 --		contextMenuCallback = function(comboBox, control, data) ... end, -- optional function for a right click action, e.g. show a scrollable context menu at the menu entry
+--		sortPosition = 1, --number or function returning a number. This is the index the entry should be sorted to, if the entry table is sorted via API function SortCustomScrollableMenu
 -- }
 --}, --[[additionalData]]
 --	 	{ isNew = true, normalColor = ZO_ColorDef, highlightColor = ZO_ColorDef, disabledColor = ZO_ColorDef, highlightTemplate = "ZO_SelectionHighlight",
@@ -917,16 +918,25 @@ lib.ButtonGroupDefaultContextMenu = buttonGroupDefaultContextMenu
 
 
 --- SORT API functions
+local sortPositionFound = false
 local function sortASC(a, b)
 	if a == nil or b == nil then return false end
+	if a.sortPosition ~= nil or b.sortPosition ~= nil then
+		sortPositionFound = true
+		return
+	end
 	local aLabel, aName, bLabel, bName = a.label, a.name, b.label, b.name
 	return (aLabel and bLabel and aLabel < bLabel)
-	 		or (aName and bLabel and aName < bLabel)
+			or (aName and bLabel and aName < bLabel)
 			or (aLabel and bName and aLabel < bName)
 			or (aName and bName and aName < bName)
 end
 local function sortDESC(a, b)
 	if a == nil or b == nil then return false end
+	if a.sortPosition ~= nil or b.sortPosition ~= nil then
+		sortPositionFound = true
+		return
+	end
 	local aLabel, aName, bLabel, bName = a.label, a.name, b.label, b.name
 	return (aLabel and bLabel and aLabel > bLabel)
 			or (aName and bLabel and aName > bLabel)
@@ -934,14 +944,34 @@ local function sortDESC(a, b)
 			or (aName and bName and aName > bName)
 end
 
---Sort function using table.sort, automatically checking for LSM entry's label or name attribute to compare them alphabetically.
+--Sort function using table.sort, automatically checking for LSM entry's label or name attribute to compare them alphabetically,
+--and keeps entries with .sortPosition = <number or function returning a number> specified at that position.
 --Parameter tableToSort must be the table that should be sorted
 --Parameter sortOrder must be a boolean (like ZO_SORT_ORDER_UP -> ASC: A to Z, and ZO_SORT_ORDER_DOWN -> DESC: Z to A), or function returning a boolean
+-->Returns the sortedTable
 function SortCustomScrollableMenu(tableToSort, sortOrder) --#2026_16
-	assert(type(tableToSort) ~= "table", MAJOR .. " - SortCustomScrollableMenu ERROR: Parameter tableToSort must be a table!")
+	sortPositionFound = false
+	assert(type(tableToSort) == "table", MAJOR .. " - SortCustomScrollableMenu ERROR: Parameter tableToSort must be a table!")
 	local sortOrderValue = getValueOrCallback(sortOrder)
 	if sortOrderValue == nil then sortOrderValue = ZO_SORT_ORDER_UP end
 	table.sort(tableToSort, (sortOrderValue == ZO_SORT_ORDER_UP and sortASC) or sortDESC)
+
+	--Any fixed sortPosition found in the table? Put these at their defined fixed positions again
+	if sortPositionFound == true then
+		local newRetTab = {}
+		for _, entry in ipairs(tableToSort) do
+			local sortPosition = getValueOrCallback(entry.sortPosition, entry)
+			if type(sortPosition) == "number" then
+d(">found SortPosition #" ..tos(sortPosition))
+				table.insert(newRetTab, sortPosition, entry)
+			else
+				newRetTab[#newRetTab+1] = entry
+			end
+		end
+		sortPositionFound = false
+		return newRetTab
+	end
+	return tableToSort
 end
 
 

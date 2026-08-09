@@ -326,11 +326,13 @@ Max error #: 2026_16
 --#2026_15 Add support at RefreshCustomScrollableMenu for existing comboBoxes where AddCustomScrollableComboBoxDropdownMenu added the LSM
 
 [Added]
---#2026_16 Added API function
----Sort function using table.sort, automatically checking for LSM entry's label or name attribute to compare them alphabetically.
----Parameter tableToSort must be the table that should be sorted
----Parameter sortOrder must be a boolean (like ZO_SORT_ORDER_UP -> ASC: A to Z, and ZO_SORT_ORDER_DOWN -> DESC: Z to A), or function returning a boolean
----function SortCustomScrollableMenu(tableToSort, sortOrder) --#2026_16
+--#2026_16 Added API function SortCustomScrollableMenu
+--Sort function using table.sort, automatically checking for LSM entry's label or name attribute to compare them alphabetically,
+--and keeps entries with .sortPosition = <number or function returning a number> specified at that position.
+--Parameter tableToSort must be the table that should be sorted
+--Parameter sortOrder must be a boolean (like ZO_SORT_ORDER_UP -> ASC: A to Z, and ZO_SORT_ORDER_DOWN -> DESC: Z to A), or function returning a boolean
+-->Returns the sortedTable
+--function SortCustomScrollableMenu(tableToSort, sortOrder)
 
 [Changed]
 
