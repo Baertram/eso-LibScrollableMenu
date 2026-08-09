@@ -1235,7 +1235,7 @@ function libUtil.getComboBox(control, owningMenu)
 		--owningMenu boolean will be used to determine the m_comboBox (main menu) only and not the m_owner
 		-->Needed for LSM context menus that do not open on any LSM control, but standalone!
 		-->Checked in onMouseUp's callback function
-		if owningMenu then
+		if owningMenu == true then
 			if control.m_comboBox then
 				return control.m_comboBox
 			end

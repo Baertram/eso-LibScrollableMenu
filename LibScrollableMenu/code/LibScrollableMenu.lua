@@ -304,7 +304,7 @@ EM:RegisterForEvent(MAJOR, EVENT_ADD_ON_LOADED, onAddonLoaded)
 ---------------------------------------------------------------
 	CHANGELOG Current version: 2.45 - Updated 2026-08-09
 ---------------------------------------------------------------
-Max error #: 2026_16
+Max error #: 2026_17
 
 
 [WORKING ON]
@@ -333,6 +333,12 @@ Max error #: 2026_16
 --Parameter sortOrder must be a boolean (like ZO_SORT_ORDER_UP -> ASC: A to Z, and ZO_SORT_ORDER_DOWN -> DESC: Z to A), or function returning a boolean
 -->Returns the sortedTable
 --function SortCustomScrollableMenu(tableToSort, sortOrder)
+--#2026_17 Added API function GetCustomScrollableMenuCtrlsInfo
+-- Get the currently mouse-over control and it's relating comboBox + the itemData
+-- Parameter ctrl must be a userdata control
+-- Parameter comboBoxFromParentMenu boolean defines if you want the owning LSM menu's comboBox, or the current ctrl's one
+--> returns owning comboBox object, itemData table
+function GetCustomScrollableMenuCtrlsInfo(ctrl, comboBoxFromParentMenu)
 
 [Changed]
 

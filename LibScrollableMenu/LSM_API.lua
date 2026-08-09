@@ -64,6 +64,8 @@ local getComboBoxsSortedItems = libUtil.getComboBoxsSortedItems
 local validateContextMenuSubmenuEntries = libUtil.validateContextMenuSubmenuEntries
 local checkEntryType = libUtil.checkEntryType
 local libUtil_BelongsToContextMenuCheck = libUtil.belongsToContextMenuCheck
+local getDataSource = libUtil.getDataSource
+local getComboBox = libUtil.getComboBox
 
 local g_contextMenu
 local buttonGroupDefaultContextMenu
@@ -286,6 +288,8 @@ GetCustomScrollableMenuRowData = libUtil.getControlData
 --		isNew = false, --  optional booelan or function returning a boolean Is this entry a new entry and thus shows the "New" icon?
 --		entries = { ... see above ... }, -- optional table containing nested submenu entries in this submenu -> This entry opens a new nested submenu then. Contents of entries use the same values as shown in this example here
 --		contextMenuCallback = function(comboBox, control, data) ... end, -- optional function for a right click action, e.g. show a scrollable context menu at the menu entry
+--		doNotFilter = false, --boolean or function returning a boolean. If true this entry won't be hidden (filtered) if the header's filter editbox is used. If it's a function it's signature is doNotFilterFunc(LSM_comboBox, selectedMenuItem, openingMenusEntries), so one can e.g. make a button entryType only filter if there is no other entry inside the table currentDropdownEntriesTable
+--		doNotFilterEntryTypes = { LSM_ENTRY_TYPE_CHECKBOX }, --table or function returning a table of LSM entryTypes. Only works in combination with doNotFilter = function! If provided the current list is prefiltered by these entryTypes, before the doNotFilter function is executed on them (e.g. { LSM_ENTRY_TYPE_CHECKBOX } to only prefilter checkbox entries of the current list)
 --		sortPosition = 1, --number or function returning a number. This is the index the entry should be sorted to, if the entry table is sorted via API function SortCustomScrollableMenu
 -- }
 --}, --[[additionalData]]
@@ -625,6 +629,19 @@ LSM_Debug.cntxtMenuControlToAnchorTo = controlToAnchorTo
 end
 local showCustomScrollableMenu = ShowCustomScrollableMenu
 
+
+-- Get the currently mouse-over control and it's relating comboBox + the itemData
+-- Parameter ctrl must be a userdata control
+-- Parameter comboBoxFromParentMenu boolean defines if you want the owning LSM menu's comboBox, or the current ctrl's one
+--> returns owning comboBox object, itemData table
+function GetCustomScrollableMenuCtrlsInfo(ctrl, comboBoxFromParentMenu) --#2026_17
+	ctrl = ctrl or moc()
+	assert(type(ctrl) == "userdata", sfor("["..MAJOR..":GetCustomScrollableMenuCtrlsInfo] ctrl: userdata expected"))
+	return getComboBox(ctrl, comboBoxFromParentMenu), getDataSource(ctrl)
+end
+local getCustomScrollableMenuCtrlsInfo = GetCustomScrollableMenuCtrlsInfo
+
+
 --Run a callback function myAddonCallbackFunc passing in the entries of the opening menu/submenu of a clicked LSM context menu item
 -->Parameters of your function myAddonCallbackFunc must be:
 -->function myAddonCallbackFunc(userdata LSM_comboBox, userdata selectedContextMenuItem, table openingMenusEntries, ...)
@@ -656,6 +673,23 @@ local showCustomScrollableMenu = ShowCustomScrollableMenu
 ---> returns boolean customCallbackFuncWasExecuted, nilable:any customCallbackFunc's return value
 function RunCustomScrollableMenuItemsCallback(comboBox, item, myAddonCallbackFunc, filterEntryTypes, fromParentMenu, ...)
 	updateContextMenuRef()
+
+	if item == nil or comboBox == nil then
+		local mocCtrl = moc()
+		local comboBoxNew, itemDataNew = getCustomScrollableMenuCtrlsInfo(mocCtrl, fromParentMenu)
+		if comboBox == nil then comboBox = comboBoxNew end
+		if item == nil then item = itemDataNew end
+
+		lib._RunCustomScrollableMenuItemsCallback = {
+			comboBox = comboBox,
+			item = item
+		}
+	end
+	if item == nil or comboBox == nil then
+		d(MAJOR.. " - RunCustomScrollableMenuItemsCallback ERROR: Parameters comboBox, item must be provided!")
+		return
+	end
+
 	local assertFuncName = "RunCustomScrollableMenuItemsCallback"
 	local addonCallbackFuncType = type(myAddonCallbackFunc)
 	assert(addonCallbackFuncType == "function", sfor("["..MAJOR..":"..assertFuncName.."] myAddonCallbackFunc: function expected, got %q", tos(addonCallbackFuncType)))
@@ -958,16 +992,20 @@ function SortCustomScrollableMenu(tableToSort, sortOrder) --#2026_16
 
 	--Any fixed sortPosition found in the table? Put these at their defined fixed positions again
 	if sortPositionFound == true then
-		local newRetTab = {}
+		local newRetTab   = {}
+		local otherSorted = {}
 		for _, entry in ipairs(tableToSort) do
 			local sortPosition = getValueOrCallback(entry.sortPosition, entry)
 			if type(sortPosition) == "number" then
-d(">found SortPosition #" ..tos(sortPosition))
-				table.insert(newRetTab, sortPosition, entry)
+				newRetTab[sortPosition] = entry
 			else
-				newRetTab[#newRetTab+1] = entry
+				otherSorted[#otherSorted + 1] = entry
 			end
 		end
+		for _, otherSortedEntry in ipairs(otherSorted) do
+			newRetTab[#newRetTab + 1] = otherSortedEntry
+		end
+		otherSorted = nil
 		sortPositionFound = false
 		return newRetTab
 	end
