@@ -233,7 +233,7 @@ RefreshCustomScrollableMenu(mocCtrl, updateMode, comboBox)
 --Added LSM_ENTRY_TYPE_CHECKBOX with checkboxButtonGroups. data.buttonTemplate can be used to define the buttons XML template. Clicking a checkbox keeps the dropdown opened!
 	data.buttonGroup defines the button group. Specifying several checkboxes with the same group number adds them to the same group.
 --Added API function LibScrollableMenu.SetButtonGroupState(...) for checkboxes which belong to a buttonGroup. Use it from data.contextMenuCallback e.g. to show a "Select all" , "Unselect all" and "Invert selection" context menu
-----contextMenuCallback = function(...) LibScrollableMenu.SetButtonGroupState(...) end,
+----contextMenuCallback = function(comboBox, control, data) LibScrollableMenu.SetButtonGroupState(comboBox, control, data) end,
 
 --Added API function GetCustomScrollableMenuRowData(rowControl)
 --Added item.m_owner to RefreshSortedItems

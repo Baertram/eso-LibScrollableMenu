@@ -2195,7 +2195,7 @@ do -- Row setup functions
 		end
 	end
 
-	local function processEditBoxData(control)
+	local function processEditBoxData(comboBox, control, data)
 		local editBoxData = control.editBoxData
 		if type(editBoxData) ~= "table" then return end
 
@@ -2212,10 +2212,10 @@ do -- Row setup functions
 		--contextMenuCallback -- ContextMenu at the editBox
 		local contextMenuCallback = editBoxData.contextMenuCallback
 		if type(contextMenuCallback) == "function" then
-			local function showEditBoxContextMenu(p_editBox)
+			local function showEditBoxContextMenu(p_comboBox, p_editBox, p_data)
 				ZO_Tooltips_HideTextTooltip()
 				--Show the contextMenu now
-				contextMenuCallback(p_editBox)
+				contextMenuCallback(p_comboBox, p_editBox, p_data)
 			end
 
 			editBoxCtrl:SetMouseEnabled(true)
@@ -2223,7 +2223,7 @@ do -- Row setup functions
 			editBoxCtrl:SetHandler("OnMouseUp", function(p_editBox, button, upInside, ctrl, alt, shift)
 				if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
 					--Remove the cursor from the editbox
-					showEditBoxContextMenu(p_editBox)
+					showEditBoxContextMenu(comboBox, p_editBox, data)
 				end
 			end)
 
@@ -2233,7 +2233,7 @@ do -- Row setup functions
 				labelCtrl:SetHandler("OnMouseUp", function(p_editBox, button, upInside, ctrl, alt, shift)
 					if not upInside then return end
 					if button == MOUSE_BUTTON_INDEX_RIGHT then
-						showEditBoxContextMenu(p_editBox)
+						showEditBoxContextMenu(comboBox, p_editBox, data)
 					end
 				end)
 			end
@@ -2359,7 +2359,7 @@ do -- Row setup functions
 	end
 
 	local currentMinMaxStepText = GetString(SI_LSM_SLIDER_CURRENT_MIN_MAX_STEP)
-	local function processSliderData(control)
+	local function processSliderData(comboBox, control, data)
 		local sliderData = control.sliderData
 		if type(sliderData) ~= "table" then return end
 
@@ -2433,7 +2433,7 @@ do -- Row setup functions
 		end
 
 		local sliderGotContextMenu = contextMenuCallback ~= nil --#2026_08
-		local function showSliderContextMenu(p_sliderCtrl) --#2026_08
+		local function showSliderContextMenu(p_comboBox, p_sliderCtrl, p_data) --#2026_08
 			if not sliderGotContextMenu then return end
 			ZO_Tooltips_HideTextTooltip()
 			contextMenuCallback(p_sliderCtrl)
@@ -2445,13 +2445,13 @@ do -- Row setup functions
 			labelCtrl:SetHandler("OnMouseUp", function(p_sliderCtrl, button, upInside, ctrl, alt, shift)
 				if not upInside then return end
 				if button == MOUSE_BUTTON_INDEX_RIGHT then
-					showSliderContextMenu(p_sliderCtrl)
+					showSliderContextMenu(comboBox, p_sliderCtrl, data)
 				end
 			end)
 			sliderValueLabel:SetHandler("OnMouseUp", function(p_sliderCtrl, button, upInside, ctrl, alt, shift)
 				if not upInside then return end
 				if button == MOUSE_BUTTON_INDEX_RIGHT then
-					showSliderContextMenu(p_sliderCtrl)
+					showSliderContextMenu(comboBox, p_sliderCtrl, data)
 				end
 			end)
 		end
@@ -2461,7 +2461,7 @@ do -- Row setup functions
 		local function onSliderMouseUp(p_sliderCtrl, button, upInside, ctrl, alt, shift)
 			if not upInside then return end
 			if button == MOUSE_BUTTON_INDEX_RIGHT then
-				showSliderContextMenu(p_sliderCtrl)
+				showSliderContextMenu(comboBox, p_sliderCtrl, data)
 			elseif button == MOUSE_BUTTON_INDEX_LEFT then
 				sliderValueLabel:SetText((showSliderValueLabel == true and tos(p_sliderCtrl:GetValue())) or "")
 				sliderOnMouseEnter(p_sliderCtrl)
@@ -2708,7 +2708,7 @@ d(">enabled: " .. tos(data.enabled))
 		if editBoxTemplate then
 			ApplyTemplateToControl(control, editBoxTemplate)
 		end
-		processEditBoxData(control)
+		processEditBoxData(self, control, data)
 
 		local isEnabled = data.enabled
 		if isEnabled == nil then
@@ -2746,7 +2746,7 @@ d(">enabled: " .. tos(data.enabled))
 		if sliderTemplate then
 			ApplyTemplateToControl(control, sliderTemplate)
 		end
-		processSliderData(control)
+		processSliderData(self, control, data)
 
 		local isEnabled = data.enabled
 		if isEnabled == nil then
